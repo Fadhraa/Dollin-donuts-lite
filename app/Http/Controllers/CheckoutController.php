@@ -94,6 +94,11 @@ class CheckoutController extends Controller
             // 4. Dapatkan Snap Token dari Midtrans
             $snapToken = Snap::getSnapToken($params);
 
+            // Simpan snap_token ke pesanan yang baru dibuat
+            DB::table('orders')->where('id_pesanan', $data['id_pesanan'])->update([
+                'snap_token' => $snapToken
+            ]);
+
             return response()->json([
                 'status'     => 'success',
                 'snap_token' => $snapToken

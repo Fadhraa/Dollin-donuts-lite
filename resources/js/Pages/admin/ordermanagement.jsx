@@ -2,7 +2,7 @@ import AdminNav from "../layouts/admin_nav";
 import { Head, router } from "@inertiajs/react";
 
 function OrderManagement({ orders = [], stats = {} }) {
-    
+    console.log(orders)
     // Fungsi untuk memperbarui status pesanan ke database
     const handleStatusChange = (orderId, newStatus) => {
         router.patch(`/admin/ordermanagement/${orderId}/status`, {
@@ -93,6 +93,7 @@ function OrderManagement({ orders = [], stats = {} }) {
                                 <tr className="bg-surface-container-low">
                                     <th className="px-6 py-5 text-sm font-bold text-primary header-anchor uppercase tracking-wider">ID Pesanan</th>
                                     <th className="px-6 py-5 text-sm font-bold text-primary header-anchor uppercase tracking-wider">Pelanggan</th>
+                                    <th className="px-6 py-5 text-sm font-bold text-primary header-anchor uppercase tracking-wider">Alamat</th>
                                     <th className="px-6 py-5 text-sm font-bold text-primary header-anchor uppercase tracking-wider">Item Dipesan</th>
                                     <th className="px-6 py-5 text-sm font-bold text-primary header-anchor uppercase tracking-wider">Tanggal Pesanan</th>
                                     <th className="px-6 py-5 text-sm font-bold text-primary header-anchor uppercase tracking-wider">Total Harga</th>
@@ -103,24 +104,24 @@ function OrderManagement({ orders = [], stats = {} }) {
                             <tbody className="divide-y divide-surface-container">
                                 {orders.length === 0 ? (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-10 text-center text-on-surface-variant">
+                                        <td colSpan="8" className="px-6 py-10 text-center text-on-surface-variant">
                                             Belum ada pesanan masuk.
                                         </td>
                                     </tr>
                                 ) : (
                                     orders.map((order) => {
                                         // Buat inisial nama
-                                        
-                     
+
                                         const initials = order.nama.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
                                         
                                         // Ekstrak item (maks 2 yang ditampilkan lengkap)
                                         const displayItems = order.items.slice(0, 2);
                                         const remainingItems = order.items.length - 2;
                                     
-
+                                     
                                         // Warna select beda-beda tergantung status
                                         let selectColorClass = 'bg-surface-variant text-on-surface-variant border-none focus:ring-outline';
+                                        if (order.order_status === 'Dikonfirmasi') selectColorClass = 'bg-primary-container text-on-primary-container border-none focus:ring-primary';
                                         if (order.order_status === 'Diproses') selectColorClass = 'bg-secondary-container text-on-secondary-container border-none focus:ring-secondary';
                                         if (order.order_status === 'Selesai') selectColorClass = 'bg-tertiary-container text-on-tertiary-container border-none focus:ring-tertiary';
 
@@ -133,6 +134,11 @@ function OrderManagement({ orders = [], stats = {} }) {
                                                             {initials}
                                                         </div>
                                                         <span className="font-semibold text-on-surface">{order.nama}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <div className="text-sm font-medium text-on-surface-variant max-w-[150px] truncate" title={order.alamat || '-'}>
+                                                        {order.alamat || '-'}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-6">
@@ -172,6 +178,7 @@ function OrderManagement({ orders = [], stats = {} }) {
                                                         className={`text-xs font-bold px-4 py-2 rounded-full cursor-pointer transition-colors ${selectColorClass}`}
                                                     >
                                                         <option value="Menunggu Konfirmasi">Menunggu Konfirmasi</option>
+                                                        <option value="Dikonfirmasi">Dikonfirmasi</option>
                                                         <option value="Diproses">Diproses</option>
                                                         <option value="Selesai">Selesai</option>
                                                     </select>

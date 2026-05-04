@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import Navbar from '@/Components/Navbar';
 
 export default function Welcome({ products = [], branches = [] }) {
     useEffect(() => {
@@ -31,6 +32,8 @@ export default function Welcome({ products = [], branches = [] }) {
         alamat: '',
         payment_method: '',
     });
+    const [isProcessing, setIsProcessing] = useState(false);
+
     const showNotification = (text, type) => {
         setShowInfoModal(true);
         setMessage({ text, type });
@@ -48,6 +51,8 @@ export default function Welcome({ products = [], branches = [] }) {
     const handleOrder = async (e) => {
         e.preventDefault();
 
+        if (isProcessing) return;
+
         if (!formData.nama || !formData.nohp || !formData.alamat) {
             showNotification('Harap lengkapi data diri dan alamat pengiriman.', 'error');
             return;
@@ -57,6 +62,8 @@ export default function Welcome({ products = [], branches = [] }) {
             showNotification('Harap pilih metode pembayaran terlebih dahulu.', 'error');
             return;
         }
+
+        setIsProcessing(true);
 
         const timestamp = Date.now().toString().slice(-4);
         const idPesanan = `ORD-${Date.now().toString().slice(-6)}`;
@@ -76,19 +83,25 @@ export default function Welcome({ products = [], branches = [] }) {
                     onSuccess: function(result) {
                         showNotification('Pembayaran berhasil!', 'success');
                         setCart([]); // Kosongkan keranjang
+                        setIsProcessing(false);
+                        window.location.href = '/Pesanan';
                     },
                     onPending: function(result) {
                         showNotification('Menunggu pembayaran Anda.', 'info');
+                        setIsProcessing(false);
                     },
                     onError: function(result) {
                         showNotification('Pembayaran gagal.', 'error');
+                        setIsProcessing(false);
                     },
                     onClose: function() {
                         showNotification('Anda menutup jendela sebelum menyelesaikan pembayaran', 'error');
+                        setIsProcessing(false);
                     }
                 });
             }
         }catch (error) {
+            setIsProcessing(false);
             // Tampilkan detail error dari backend ke Console
             console.log("Detail Error:", error.response?.data);
             
@@ -224,30 +237,13 @@ export default function Welcome({ products = [], branches = [] }) {
             </Head>
 
             {/* TopNavBar */}
-            <nav className="fixed top-0 w-full z-50 bg-[#fef6e7]/80 dark:bg-[#322e25]/80 backdrop-blur-xl shadow-sm dark:shadow-none">
-                <div className="relative flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
-                    <span className="text-2xl font-bold tracking-tight text-[#76543d] dark:text-[#fef6e7] brand-font">Dollin Donuts</span>
-                    <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-8">
-                        <a className="text-[#76543d] hover:font-bold hover:border-b-2 hover:border-[#76543d] pb-1 body-md cursor-pointer transition-opacity duration-300" href="#menu">Menu</a>
-                        <Link href="/Pesanan" className="text-[#76543d] hover:font-bold hover:border-b-2 hover:border-[#76543d] pb-1 body-md cursor-pointer transition-all duration-100">Status Pesanan</Link>
-                    </div>
-                    <div className="flex items-end gap-4">
-                        {/* Tombol Login/Dashboard yang terhubung ke sistem */}
-                        <div>
-                            <span className='text-xs font-bold text-on-surface-variant tracking-widest'>LOKASI PENGAMBILAN: </span>
-                            <h3 className='text-lg font-bold text-primary'>{activeBranch?.nama || 'Pilih Outlet'}</h3>
-                        </div>
-
-
-                        <button
-                            onClick={() => setShowBranchModal(true)}
-                            className="ml-2 py-1 text-xs font-bold text-on-surface-variant hover:text-primary underline decoration-dotted underline-offset-4 transition-colors"
-                        >
-                            Ganti
-                        </button>
-                    </div>
-                </div>
-            </nav>
+            <Navbar 
+                branches={branches}
+                activeBranch={activeBranch}
+                setActiveBranch={setActiveBranch}
+                showBranchModal={showBranchModal}
+                setShowBranchModal={setShowBranchModal}
+            />
             {/* Modern Toast Notification */}
             {showInfoModal && (
                 <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-10 fade-in duration-300">
@@ -285,48 +281,7 @@ export default function Welcome({ products = [], branches = [] }) {
                     </div>
                 </div>
             )}
-            {/* Modal Pilih Cabang (Muncul Otomatis) */}
-            {showBranchModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-md bg-black/40 animate-in fade-in duration-300">
-                    <div className="bg-surface-container-highest max-w-md w-full rounded-3xl p-8 shadow-2xl border border-white/20 transform animate-in zoom-in-95 duration-300">
-                        <div className="text-center mb-8">
-                            <div className="bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <span className="material-symbols-rounded text-primary text-3xl">location</span>
-                            </div>
-                            <h2 className="text-2xl font-bold text-on-surface">Pilih Outlet Dollin</h2>
-                            <p className="text-on-surface-variant mt-2 text-sm">
-                                Silahkan pilih outlet terdekat untuk melihat ketersediaan stok donat favoritmu.
-                            </p>
-                        </div>
-
-                        <div className="space-y-3">
-                            {branches.map((branch) => (
-                                <button
-                                    key={branch.id}
-                                    onClick={() => {
-                                        setActiveBranch(branch);
-                                        console.log(branch);
-                                        setShowBranchModal(false);
-                                        // Simpan pilihan ke localStorage agar tidak tanya terus saat refresh
-                                        localStorage.setItem('selectedBranch', JSON.stringify(branch));
-                                    }}
-                                    className="w-full flex items-center p-4 rounded-2xl bg-surface-container-low hover:bg-primary/10 border border-transparent hover:border-primary/30 transition-all group text-left"
-                                >
-                                    <div className="flex-1">
-                                        <h3 className="font-bold text-on-surface group-hover:text-primary transition-colors">{branch.nama}</h3>
-                                        <p className="text-xs text-on-surface-variant line-clamp-1">{branch.alamat}</p>
-                                    </div>
-                                    <span className="material-symbols-rounded text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
-                                </button>
-                            ))}
-                        </div>
-
-                        <p className="text-center text-[10px] text-on-surface-variant mt-8 uppercase tracking-widest font-bold">
-                            Freshly Baked Every Day
-                        </p>
-                    </div>
-                </div>
-            )}
+            {/* Modal Pilih Cabang (Muncul Otomatis) dihandle oleh Navbar */}
 
             {/* Hero Section */}
             <section className="relative pt-32 pb-20 px-8 overflow-hidden">
@@ -639,8 +594,8 @@ export default function Welcome({ products = [], branches = [] }) {
                                     <span className="text-on-surface font-bold text-xl">Total Pembayaran</span>
                                     <span className="text-2xl font-black text-primary">Rp {grandTotal.toLocaleString('id-ID')}</span>
                                 </div>
-                                <button className="w-full py-5 bg-primary text-on-primary rounded-2xl font-black text-lg hover:-translate-y-1 transition-all shadow-xl shadow-primary/20 cursor-pointer">
-                                    Pesan Sekarang
+                                <button disabled={isProcessing} className={`w-full py-5 text-on-primary rounded-2xl font-black text-lg transition-all cursor-pointer ${isProcessing ? 'bg-primary/50 shadow-none cursor-not-allowed' : 'bg-primary shadow-xl hover:-translate-y-1 shadow-primary/20'}`}>
+                                    {isProcessing ? 'Memproses...' : 'Pesan Sekarang'}
                                 </button>
                             </div>
                         </form>

@@ -1,16 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
+import Navbar from '@/Components/Navbar';
 
-export default function StatusPesanan() {
+export default function StatusPesanan({ branches = [] }) {
     const [nohp, setNohp] = useState('');
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [hasSearched, setHasSearched] = useState(false);
+    const [showModalSelesai, setShowModalSelesai] = useState(false);
+    const [message, setMessage] = useState({ text: '', type: '' });
+    const [showInfoModal, setShowInfoModal] = useState(false);
+    
+    const [activeBranch, setActiveBranch] = useState(null);
+    const [showBranchModal, setShowBranchModal] = useState(false);
+
+    useEffect(() => {
+        const savedBranch = localStorage.getItem('selectedBranch');
+        if (savedBranch) {
+            setActiveBranch(JSON.parse(savedBranch));
+        } else {
+            setShowBranchModal(true);
+        }
+    }, []);
+
+    const showNotification = (text, type) => {
+        setShowInfoModal(true);
+        setMessage({ text, type });
+        setTimeout(() => {
+            setShowInfoModal(false);
+            setMessage({ text: '', type: '' });
+        }, 3000);
+    };
+
+    const clearMessage = () => {
+        setShowInfoModal(false);
+        setMessage({ text: '', type: '' });
+    };
+
+    const activeOrders = orders.filter(o => o.order_status !== 'Selesai');
+    const completedOrders = orders.filter(o => o.order_status === 'Selesai');
+
+    const resumePayment = (snapToken) => {
+        if (!snapToken) return;
+        window.snap.pay(snapToken, {
+            onSuccess: function(result) {
+                showNotification('Pembayaran berhasil! Silakan muat ulang halaman ini.', 'success');
+            },
+            onPending: function(result) {
+                showNotification('Menunggu pembayaran Anda.', 'info');
+            },
+            onError: function(result) {
+                showNotification('Pembayaran gagal.', 'error');
+            },
+            onClose: function() {
+                showNotification('Anda menutup jendela sebelum menyelesaikan pembayaran', 'error');
+            }
+        });
+    };
 
     const checkStatus = async (e) => {
-        e.preventDefault();
+        if (e) e.preventDefault();
         setLoading(true);
         setError('');
         setHasSearched(true);
@@ -30,6 +81,25 @@ export default function StatusPesanan() {
         }
     };
 
+    useEffect(() => {
+        let intervalId;
+        if (hasSearched && nohp) {
+            intervalId = setInterval(async () => {
+                try {
+                    const response = await axios.post('/api/cek-pesanan', { nohp });
+                    if (response.data.status === 'success') {
+                        setOrders(response.data.data);
+                    }
+                } catch (err) {
+                    // Silently fail on auto-refresh to not interrupt user
+                }
+            }, 5000); // 5 seconds polling
+        }
+        return () => {
+            if (intervalId) clearInterval(intervalId);
+        };
+    }, [hasSearched, nohp]);
+
     const getStatusBadge = (status) => {
         switch (status?.toLowerCase()) {
             case 'success':
@@ -47,6 +117,8 @@ export default function StatusPesanan() {
         switch (status) {
             case 'Menunggu Konfirmasi':
                 return <span className="px-3 py-1 bg-surface-container-high text-on-surface rounded-full text-xs font-bold border border-outline-variant">Menunggu Konfirmasi</span>;
+            case 'Dikonfirmasi':
+                return <span className="px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold border border-primary-fixed-dim">Dikonfirmasi: Pesananmu akan diproses secepatnya</span>;
             case 'Diproses':
                 return <span className="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold border border-secondary-fixed-dim">Sedang Diproses Dapur</span>;
             case 'Selesai':
@@ -63,17 +135,52 @@ export default function StatusPesanan() {
                 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
             </Head>
             
-            {/* TopNavBar Fixed */}
-           <nav className="fixed top-0 w-full z-50 bg-[#fef6e7]/80 dark:bg-[#322e25]/80 backdrop-blur-xl shadow-sm dark:shadow-none">
-                
-                <div className="relative flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
-                    <span className="text-2xl font-bold tracking-tight text-[#76543d] dark:text-[#fef6e7] brand-font">Dollin Donuts</span>
-                    <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-8">
-                        <Link href="/" className="text-[#76543d] hover:font-bold hover:border-b-2 hover:border-[#76543d] pb-1 body-md cursor-pointer transition-opacity duration-300">Menu</Link>
-                        <Link href="/Pesanan" className="text-[#76543d] hover:font-bold hover:border-b-2 hover:border-[#76543d] pb-1 body-md cursor-pointer transition-all duration-100">Status Pesanan</Link>
+            {/* TopNavBar */}
+            <Navbar 
+                branches={branches}
+                activeBranch={activeBranch}
+                setActiveBranch={setActiveBranch}
+                showBranchModal={showBranchModal}
+                setShowBranchModal={setShowBranchModal}
+            />
+
+            {/* Modern Toast Notification */}
+            {showInfoModal && (
+                <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-10 fade-in duration-300">
+                    <div className={`flex items-center gap-4 px-6 py-4 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.1)] border ${
+                        message.type === 'success' 
+                            ? 'bg-[#f0fdf4]/95 dark:bg-green-900/90 border-green-200 text-green-800' 
+                            : message.type === 'error'
+                            ? 'bg-[#fef2f2]/95 dark:bg-red-900/90 border-red-200 text-red-800'
+                            : 'bg-white/95 dark:bg-surface-container-highest/90 border-primary/20 text-on-surface'
+                        } backdrop-blur-xl min-w-[320px] max-w-md`}>
+                        
+                        <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
+                            message.type === 'success' ? 'bg-green-100 text-green-600' : 
+                            message.type === 'error' ? 'bg-red-100 text-red-600' : 
+                            'bg-primary/10 text-primary'
+                        }`}>
+                            <span className="material-symbols-outlined font-black text-2xl">
+                                {message.type === 'success' ? 'check_circle' : message.type === 'error' ? 'error' : 'info'}
+                            </span>
+                        </div>
+
+                        <div className="flex-1">
+                            <h3 className="font-bold text-sm tracking-wide uppercase">
+                                {message.type === 'success' ? 'Berhasil' : message.type === 'error' ? 'Peringatan' : 'Informasi'}
+                            </h3>
+                            <p className="text-xs font-medium opacity-90 mt-0.5 leading-relaxed">{message.text}</p>
+                        </div>
+
+                        <button 
+                            onClick={() => clearMessage()} 
+                            className="flex-shrink-0 p-2 hover:bg-black/5 rounded-full transition-colors"
+                        >
+                            <span className="material-symbols-outlined text-xl">close</span>
+                        </button>
                     </div>
                 </div>
-            </nav>
+            )}
 
             <main className="pt-32 pb-32 px-6 max-w-4xl mx-auto">
                 {/* Hero Section */}
@@ -147,7 +254,12 @@ export default function StatusPesanan() {
                     </section>
                 ) : (
                     <section className="mt-8 space-y-6">
-                        {orders.map((order) => (
+                        {activeOrders.length === 0 && hasSearched && !loading && !error && (
+                            <div className="bg-surface-container-lowest rounded-[2rem] p-6 shadow-sm border border-outline-variant/30 text-center animate-in fade-in">
+                                <p className="text-on-surface-variant font-medium">Tidak ada pesanan aktif saat ini.</p>
+                            </div>
+                        )}
+                        {activeOrders.map((order) => (
                             <div key={order.id} className="bg-surface-container-lowest rounded-[2rem] p-6 shadow-sm border border-outline-variant/30 animate-in slide-in-from-bottom-10 fade-in duration-500 hover:shadow-md hover:border-primary/20 transition-all">
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-outline-variant/20 pb-5 mb-5 gap-3">
                                     <div>
@@ -165,14 +277,25 @@ export default function StatusPesanan() {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/20">
-                                        <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            <span className="material-symbols-outlined text-[18px]">payments</span>
-                                            Status Pembayaran
-                                        </p>
-                                        <div>{getStatusBadge(order.payment_status)}</div>
-                                        {order.payment_method && (
-                                            <p className="mt-3 text-[11px] text-on-surface-variant font-bold">Via: <span className="text-primary uppercase">{order.payment_method}</span></p>
+                                    <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/20 flex flex-col justify-between">
+                                        <div>
+                                            <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-3 flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-[18px]">payments</span>
+                                                Status Pembayaran
+                                            </p>
+                                            <div>{getStatusBadge(order.payment_status)}</div>
+                                            {order.payment_method && (
+                                                <p className="mt-3 text-[11px] text-on-surface-variant font-bold">Via: <span className="text-primary uppercase">{order.payment_method}</span></p>
+                                            )}
+                                        </div>
+                                        {order.payment_status === 'pending' && order.snap_token && (
+                                            <button 
+                                                onClick={() => resumePayment(order.snap_token)}
+                                                className="mt-4 w-full py-2 bg-primary text-on-primary rounded-xl text-sm font-bold shadow-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">credit_card</span>
+                                                Bayar Sekarang
+                                            </button>
                                         )}
                                     </div>
                                     <div className="bg-surface-container-low rounded-2xl p-4 border border-outline-variant/20">
@@ -191,6 +314,18 @@ export default function StatusPesanan() {
                                 </div>
                             </div>
                         ))}
+
+                        {completedOrders.length > 0 && (
+                            <div className="flex justify-center mt-6 animate-in fade-in">
+                                <button 
+                                    onClick={() => setShowModalSelesai(true)}
+                                    className="px-6 py-3 bg-surface-container-high text-on-surface rounded-xl font-bold border border-outline-variant/30 hover:bg-surface-container-highest transition-colors shadow-sm text-sm flex items-center gap-2"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">history</span>
+                                    Lihat Riwayat Pesanan Selesai ({completedOrders.length})
+                                </button>
+                            </div>
+                        )}
                     </section>
                 )}
 
@@ -223,6 +358,41 @@ export default function StatusPesanan() {
                     </div>
                 </section>
             </main>
+
+            {/* Modal Riwayat Pesanan Selesai */}
+            {showModalSelesai && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+                    <div className="bg-surface-container-lowest w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-200">
+                        <div className="p-6 border-b border-outline-variant/10 flex justify-between items-center bg-surface-container-low">
+                            <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+                                <span className="material-symbols-outlined">history</span> Riwayat Pesanan Selesai
+                            </h2>
+                            <button onClick={() => setShowModalSelesai(false)} className="p-2 hover:bg-black/5 rounded-full transition-colors text-on-surface-variant">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="p-6 overflow-y-auto space-y-4">
+                            {completedOrders.map((order) => (
+                                <div key={order.id} className="bg-surface rounded-2xl p-5 border border-outline-variant/30 hover:shadow-md transition-shadow">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <p className="font-bold text-primary font-headline">{order.id_pesanan}</p>
+                                        <span className="text-xs font-semibold text-on-surface-variant bg-surface-container px-3 py-1 rounded-full">
+                                            {new Date(order.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <div className="flex items-center gap-2 text-on-surface-variant">
+                                            <span className="material-symbols-outlined text-[16px]">storefront</span>
+                                            <span className="font-medium">{order.branch?.nama || '-'}</span>
+                                        </div>
+                                        <span className="font-black text-primary">Rp {Number(order.total).toLocaleString('id-ID')}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

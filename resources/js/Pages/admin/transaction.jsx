@@ -68,7 +68,7 @@ function Transaction({ transaction ={}, stats=[] }) {
                             <span className="material-symbols-outlined text-primary" data-icon="payments">payments</span>
                         </div>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-bold font-headline text-primary">Rp. {Number(stats.pendapatan_hari_ini).toLocaleString('id-ID')}</span>
+                            <span className="text-4xl font-bold font-headline text-primary">Rp {Number(stats.pendapatan_hari_ini).toLocaleString('id-ID')}</span>
                           
                         </div>
                     </div>

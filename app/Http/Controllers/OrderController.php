@@ -136,4 +136,68 @@ class OrderController extends Controller
             'stats' => $stats
         ]);
     }
+
+    public function orders()
+    {
+        $admin = Auth::user();
+
+        $query = Order::with(['branch', 'items.product'])
+            ->orderBy('created_at', 'desc');
+
+        if ($admin && $admin->branch_id) {
+            $query->where('branch_id', $admin->branch_id);
+        }
+
+        $orders = $query->get();
+
+        $statsQuery = Order::query();
+        if ($admin && $admin->branch_id) {
+            $statsQuery->where('branch_id', $admin->branch_id);
+        }
+
+        $stats = [
+            'pendapatan_hari_ini' => (clone $statsQuery)->whereDate('updated_at', today())->whereIn('payment_status', ['success', 'settlement'])->sum('total'),
+            'diproses' => (clone $statsQuery)->where('order_status', 'Diproses')->count(),
+            'total_pesanan' => (clone $statsQuery)->count(),
+        ];
+
+        return \Inertia\Inertia::render('admin/orders', [
+            'orders' => $orders,
+            'stats' => $stats
+        ]);
+    }
+
+    public function dashboard()
+    {
+        $admin = Auth::user();
+        
+        $statsQuery = Order::query();
+        if ($admin && $admin->branch_id) {
+            $statsQuery->where('branch_id', $admin->branch_id);
+        }
+
+        $pendapatan_hari_ini = (clone $statsQuery)->whereDate('updated_at', today())->whereIn('payment_status', ['success', 'settlement', 'capture'])->sum('total');
+        $pendapatan_kemarin = (clone $statsQuery)->whereDate('updated_at', today()->subDay())->whereIn('payment_status', ['success', 'settlement', 'capture'])->sum('total');
+        
+        $persentase = 0;
+        if ($pendapatan_kemarin > 0) {
+            $persentase = (($pendapatan_hari_ini - $pendapatan_kemarin) / $pendapatan_kemarin) * 100;
+        } else if ($pendapatan_hari_ini > 0) {
+            $persentase = 100;
+        }
+
+        $stats = [
+            'pendapatan_hari_ini' => $pendapatan_hari_ini,
+            'persentase_pendapatan' => round($persentase, 1),
+            'total_orders' => (clone $statsQuery)->count(),
+            'pending_pickup' => (clone $statsQuery)->whereIn('order_status', ['Diproses', 'Menunggu Konfirmasi'])->count(),
+        ];
+
+        $recent_orders = (clone $statsQuery)->orderBy('created_at', 'desc')->take(5)->get();
+
+        return \Inertia\Inertia::render('admin/dashboard', [
+            'stats' => $stats,
+            'recent_orders' => $recent_orders
+        ]);
+    }
 }
