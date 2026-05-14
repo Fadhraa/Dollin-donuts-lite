@@ -1,12 +1,24 @@
 import AdminNav from "../layouts/admin_nav";
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import {useState} from "react";
 import dayjs from "dayjs";
 
-function Transaction({ transaction ={}, stats=[] }) {
-    const [searchQuery, setSearchQuery] = useState("");
+function Transaction({ transaction ={}, stats=[], filters={} }) {
+    const [searchQuery, setSearchQuery] = useState(filters.search || "");
+    const [filterWaktu, setFilterWaktu] = useState(filters.waktu || "semua");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
+     const handleFilterChange = (e) => {
+        const selectedWaktu = e.target.value;
+        setFilterWaktu(selectedWaktu);
+        
+        // Tembak request ke backend Inertia secara diam-diam
+        router.get(
+            '/admin/transaction', // Pastikan route ini sesuai dengan route halaman transaksi kamu
+            { waktu: selectedWaktu, search: searchQuery }, 
+            { preserveState: true, replace: true }
+        );
+    };
     const filteredTransaction = transaction.filter((item) =>{
         if (!searchQuery) return true
         const cari = searchQuery.toLowerCase()
@@ -15,7 +27,7 @@ function Transaction({ transaction ={}, stats=[] }) {
             || item.nama.toLowerCase().includes(cari)
         )
     });
-     const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfLastItem = currentPage * itemsPerPage;    
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentTransactions = filteredTransaction.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(filteredTransaction.length / itemsPerPage);
@@ -68,7 +80,7 @@ function Transaction({ transaction ={}, stats=[] }) {
                             <span className="material-symbols-outlined text-primary" data-icon="payments">payments</span>
                         </div>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-bold font-headline text-primary">Rp {Number(stats.pendapatan_hari_ini).toLocaleString('id-ID')}</span>
+                            <span className="text-4xl font-bold font-headline text-primary">Rp {Number(stats.jumlah_pendapatan || 0).toLocaleString('id-ID')}</span>
                           
                         </div>
                     </div>
@@ -95,13 +107,24 @@ function Transaction({ transaction ={}, stats=[] }) {
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-full text-on-surface placeholder:text-outline-variant focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Cari berdasarkan id pesanan..." type="text" />
                         </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <div className="flex items-center bg-surface-container-low rounded-full px-4 py-2 text-sm font-medium text-on-surface gap-2 border border-outline-variant/20">
-                                <span className="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
-                                {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </div>
-                   
+                        {/* Dropdown Filter */}
+                        <div className="relative">
+                            <select 
+                                value={filterWaktu}
+                                onChange={handleFilterChange}
+                                className="appearance-none bg-surface-container text-sm text-on-surface font-bold px-4 py-2 pr-10 rounded-full border border-outline-variant/20 focus:border-primary focus:ring-0 cursor-pointer outline-none transition-all"
+                            >
+                                <option value="semua">Semua Waktu</option>
+                                <option value="hari_ini">Hari Ini</option>
+                                <option value="minggu_ini">7 Hari Terakhir</option>
+                                <option value="bulan_ini">Bulan Ini</option>
+                            </select>
+                            {/* Ikon Panah Bawah */}
+                            <span className="material-symbols-outlined text-gray-500 text-on-surface-variant pointer-events-none text-lg">
+                          
+                            </span>
                         </div>
+
                     </div>
 
                     {/* Table Container (Updated Columns) */}

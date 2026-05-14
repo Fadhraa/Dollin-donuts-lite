@@ -1,9 +1,36 @@
 import AdminNav from "../layouts/admin_nav";
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
+import { useState } from "react";
 import dayjs from "dayjs";
 
-function Orders({ orders = [], stats = {} }) {
-    console.log(orders)
+function Orders({ orders = [], stats = [], filters = {} }) {
+    const [searchQuery, setSearchQuery] = useState(filters.search || "");
+    const [filterWaktu, setFilterWaktu] = useState(filters.waktu || "semua");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    const handleFilterChange = (e) => {
+        const selectedWaktu = e.target.value;
+        setFilterWaktu(selectedWaktu);
+        router.get(
+            '/admin/orders', 
+            { waktu: selectedWaktu, search: searchQuery }, 
+            { preserveState: true, replace: true }
+        );
+    };
+    const filteredOrders = orders.filter((item) =>{
+        if (!searchQuery) return true
+        const cari = searchQuery.toLowerCase()
+        return (
+            item.id_pesanan.toLowerCase().includes(cari)
+            || item.nama.toLowerCase().includes(cari)
+        )
+    });
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem =  indexOfLastItem - itemsPerPage;
+    const currentOrders = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    console.log(currentOrders)
     return (
         <>
             <Head>
@@ -22,7 +49,7 @@ function Orders({ orders = [], stats = {} }) {
                 {/* Dashboard Header */}
                 <div className="mb-12">
                     <h1 className="text-4xl font-extrabold text-primary mb-8 tracking-tight brand-logo">Manajemen Pesanan</h1>
-
+                    
                     {/* Revenue Summary Bento Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="bg-surface-container-low p-6 rounded-lg shadow-sm border border-outline-variant/10 flex items-center justify-between">
@@ -58,6 +85,32 @@ function Orders({ orders = [], stats = {} }) {
                 {/* Order Table Container */}
                 <div className="bg-surface shadow-[0_4px_30px_rgba(50,46,37,0.04)] rounded-lg overflow-hidden border border-outline-variant/10">
                     <div className="overflow-x-auto">
+                        <div className="bg-surface-container-high flex justify-between items-center p-4">
+                            {/* search bar */}
+                            <div className="relative flex-1 max-w-md">
+                                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+                                <input 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-12 pr-4 py-2 bg-surface-container-low border border-outline-variant/10 focus:border-outline-variant/50  rounded-full text-on-surface placeholder:text-outline-variant focus:ring-0  transition-all transition-shadow duration-200"
+                                placeholder="Cari berdasarkan id pesanan..." 
+                                type="text" />
+                            </div>
+                            {/* Filter Waktu */}
+                            <div className="relative">
+                                <select 
+                                    value={filterWaktu}
+                                    onChange={handleFilterChange}
+                                    className="appearance-none bg-surface-container text-sm text-on-surface font-bold px-4 py-2 pr-10 rounded-full border border-outline-variant/20 focus:border-primary focus:ring-0 cursor-pointer outline-none transition-all"
+                                >
+                                    <option value="semua">Semua Waktu</option>
+                                    <option value="hari_ini">Hari Ini</option>
+                                    <option value="minggu_ini">7 Hari Terakhir</option>
+                                    <option value="bulan_ini">Bulan Ini</option>
+                                </select>
+                           
+                            </div>
+                        </div>
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-surface-container-high/50 text-on-surface-variant font-medium text-sm">
@@ -70,7 +123,7 @@ function Orders({ orders = [], stats = {} }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-outline-variant/10">
-                                {orders.map((order, index) => (
+                                {currentOrders.map((order, index) => (
 
                                 
                                     <tr key={index} className="hover:bg-surface-container-low transition-colors group">
@@ -139,22 +192,41 @@ function Orders({ orders = [], stats = {} }) {
                             </tbody>
                         </table>
                     </div>
-                    {/* Pagination */}
-                    <div className="px-8 py-6 bg-surface-container-low flex items-center justify-between border-t border-outline-variant/10">
-                        <p className="text-sm text-on-surface-variant">Menampilkan <span className="font-semibold">{orders.length}</span> dari <span className="font-semibold">{orders.length}</span> hasil</p>
-                        <div className="flex items-center gap-2">
-                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface border border-outline-variant/20 hover:bg-primary-container/10 transition-all text-on-surface-variant">
-                                <span className="material-symbols-outlined text-lg">chevron_left</span>
-                            </button>
-                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-on-primary font-bold shadow-md shadow-primary/20">1</button>
-                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface border border-outline-variant/20 hover:bg-primary-container/10 transition-all">2</button>
-                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface border border-outline-variant/20 hover:bg-primary-container/10 transition-all">3</button>
-                            <span className="px-2 text-on-surface-variant">...</span>
-                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface border border-outline-variant/20 hover:bg-primary-container/10 transition-all">13</button>
-                            <button className="w-10 h-10 flex items-center justify-center rounded-lg bg-surface border border-outline-variant/20 hover:bg-primary-container/10 transition-all text-on-surface-variant">
-                                <span className="material-symbols-outlined text-lg">chevron_right</span>
-                            </button>
-                        </div>
+                   {/* Pagination */}
+                    <div className="px-8 py-6 bg-surface-container-low flex flex-col sm:flex-row items-center justify-between border-t border-outline-variant/10 gap-4">
+                        <p className="text-sm text-on-surface-variant">
+                            Menampilkan <span className="font-semibold">{filteredOrders.length === 0 ? 0 : indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredOrders.length)}</span> dari <span className="font-semibold">{filteredOrders.length}</span> hasil
+                        </p>
+                        
+                        {totalPages > 0 && (
+                            <div className="flex items-center gap-2">
+                                {/* Tombol Mundur (<) */}
+                                <button 
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${currentPage === 1 ? 'bg-surface-container border-transparent text-outline-variant cursor-not-allowed' : 'bg-surface border-outline-variant/20 hover:bg-primary-container/10 text-on-surface-variant'}`}>
+                                    <span className="material-symbols-outlined text-lg">chevron_left</span>
+                                </button>
+                                
+                                {/* Looping Tombol Angka (1, 2, 3...) */}
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                                    <button 
+                                        key={number}
+                                        onClick={() => setCurrentPage(number)}
+                                        className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all font-medium ${currentPage === number ? 'bg-primary text-on-primary shadow-md shadow-primary/20' : 'bg-surface border border-outline-variant/20 hover:bg-primary-container/10'}`}>
+                                        {number}
+                                    </button>
+                                ))}
+                                
+                                {/* Tombol Maju (>) */}
+                                <button 
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${currentPage === totalPages ? 'bg-surface-container border-transparent text-outline-variant cursor-not-allowed' : 'bg-surface border-outline-variant/20 hover:bg-primary-container/10 text-on-surface-variant'}`}>
+                                    <span className="material-symbols-outlined text-lg">chevron_right</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>
@@ -164,3 +236,4 @@ function Orders({ orders = [], stats = {} }) {
 
 Orders.layout = page => <AdminNav children={page} />;
 export default Orders;
+

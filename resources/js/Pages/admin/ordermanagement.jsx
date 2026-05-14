@@ -1,8 +1,37 @@
 import AdminNav from "../layouts/admin_nav";
 import { Head, router } from "@inertiajs/react";
+import { useState } from "react";
 
-function OrderManagement({ orders = [], stats = {} }) {
-    console.log(orders)
+function OrderManagement({ orders = [], stats = {}, filters = {} }) {
+    const [searchQuery, setSearchQuery] = useState(filters.search || "");
+    const [filterWaktu, setFilterWaktu] = useState(filters.waktu || "semua");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5;
+
+    const handleFilterChange = (e) => {
+        const selectedWaktu = e.target.value;
+        setFilterWaktu(selectedWaktu);
+        router.get(
+            '/admin/ordermanagement', 
+            { waktu: selectedWaktu, search: searchQuery }, 
+            { preserveState: true, replace: true }
+        );
+    };
+
+    const filteredOrders = orders.filter((item) =>{
+        if (!searchQuery) return true
+        const cari = searchQuery.toLowerCase()
+        return (
+            item.id_pesanan.toLowerCase().includes(cari)
+            || item.nama.toLowerCase().includes(cari)
+        )
+    });
+
+    const indexOfLastItem = currentPage * itemsPerPage;    
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentOrders = filteredOrders.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
     // Fungsi untuk memperbarui status pesanan ke database
     const handleStatusChange = (orderId, newStatus) => {
         router.patch(`/admin/ordermanagement/${orderId}/status`, {
@@ -44,13 +73,29 @@ function OrderManagement({ orders = [], stats = {} }) {
                         <h1 className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight header-anchor mb-2">Pengelolaan Pesanan</h1>
                         <p className="text-on-surface-variant font-medium max-w-2xl leading-relaxed">Sistem pemantauan untuk memproses pesanan donat artisanal. Pastikan setiap glasir sempurna dan setiap pengiriman segar.</p>
                     </div>
-                    <div className="flex gap-3">
-                        <button className="bg-surface-container-high text-primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-surface-variant transition-all active:scale-95">
-                            <span className="material-symbols-outlined">filter_list</span> Filter
-                        </button>
-                        <button className="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-primary/20 active:scale-95">
-                            <span className="material-symbols-outlined">download</span> Ekspor Laporan
-                        </button>
+                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                        <div className="relative flex-1 min-w-[250px]">
+                            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+                            <input 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-12 pr-4 py-3 bg-surface border border-outline-variant/10 focus:border-outline-variant/50 rounded-xl text-on-surface placeholder:text-outline-variant focus:outline-none focus:ring-0 transition-all shadow-sm" placeholder="Cari pesanan..." type="text" />
+                        </div>
+                        <div className="relative">
+                            <select 
+                                value={filterWaktu}
+                                onChange={handleFilterChange}
+                                className="appearance-none w-full bg-surface-container-high text-primary px-6 py-3 pr-10 rounded-xl font-bold border border-transparent focus:border-outline-variant/50 focus:outline-none focus:ring-0 cursor-pointer shadow-sm transition-all"
+                            >
+                                <option value="semua">Semua Waktu</option>
+                                <option value="hari_ini">Hari Ini</option>
+                                <option value="minggu_ini">7 Hari Terakhir</option>
+                                <option value="bulan_ini">Bulan Ini</option>
+                            </select>
+                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none">
+                                expand_more
+                            </span>
+                        </div>
                     </div>
                 </header>
 
@@ -102,14 +147,14 @@ function OrderManagement({ orders = [], stats = {} }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-surface-container">
-                                {orders.length === 0 ? (
+                                {currentOrders.length === 0 ? (
                                     <tr>
                                         <td colSpan="8" className="px-6 py-10 text-center text-on-surface-variant">
                                             Belum ada pesanan masuk.
                                         </td>
                                     </tr>
                                 ) : (
-                                    orders.map((order) => {
+                                    currentOrders.map((order) => {
                                         // Buat inisial nama
 
                                         const initials = order.nama.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -195,10 +240,38 @@ function OrderManagement({ orders = [], stats = {} }) {
                             </tbody>
                         </table>
                     </div>
-                    {/* Table Pagination/Footer */}
-                    <div className="px-6 py-5 bg-surface-container-low border-t border-surface-container flex items-center justify-between">
-                        <span className="text-xs font-medium text-on-surface-variant">Menampilkan {orders.length} pesanan artisan</span>
-                        {/* Pagination placeholder, can be implemented with Inertia later */}
+                    {/* Pagination */}
+                    <div className="px-8 py-6 bg-surface-container-low flex flex-col sm:flex-row items-center justify-between border-t border-outline-variant/10 gap-4">
+                        <p className="text-sm text-on-surface-variant">
+                            Menampilkan <span className="font-semibold">{filteredOrders.length === 0 ? 0 : indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredOrders.length)}</span> dari <span className="font-semibold">{filteredOrders.length}</span> hasil
+                        </p>
+                        
+                        {totalPages > 0 && (
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${currentPage === 1 ? 'bg-surface-container border-transparent text-outline-variant cursor-not-allowed' : 'bg-surface border-outline-variant/20 hover:bg-primary-container/10 text-on-surface-variant'}`}>
+                                    <span className="material-symbols-outlined text-lg">chevron_left</span>
+                                </button>
+                                
+                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((number) => (
+                                    <button 
+                                        key={number}
+                                        onClick={() => setCurrentPage(number)}
+                                        className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all font-medium ${currentPage === number ? 'bg-primary text-on-primary shadow-md shadow-primary/20' : 'bg-surface border border-outline-variant/20 hover:bg-primary-container/10'}`}>
+                                        {number}
+                                    </button>
+                                ))}
+                                
+                                <button 
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                    disabled={currentPage === totalPages}
+                                    className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${currentPage === totalPages ? 'bg-surface-container border-transparent text-outline-variant cursor-not-allowed' : 'bg-surface border-outline-variant/20 hover:bg-primary-container/10 text-on-surface-variant'}`}>
+                                    <span className="material-symbols-outlined text-lg">chevron_right</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>
