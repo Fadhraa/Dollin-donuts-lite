@@ -15,7 +15,7 @@ class CourierPortalController extends Controller
         if (!$courier || $courier->role !== 'courier') return abort(403);
 
         // Pesanan yang siap diambil kurir (dari cabang yang sama, tipe delivery)
-        $availableOrders = Order::with('items.product')
+        $availableOrders = Order::with(['items.product', 'branch'])
             ->where('branch_id', $courier->branch_id)
             ->where('delivery_method', 'delivery')
             ->where('order_status', 'Siap Diantar')
@@ -24,7 +24,7 @@ class CourierPortalController extends Controller
             ->get();
 
         // Pesanan yang sedang diantar kurir ini
-        $activeOrders = Order::with('items.product')
+        $activeOrders = Order::with(['items.product', 'branch'])
             ->where('courier_id', $courier->id)
             ->where('order_status', 'Sedang Dikirim')
             ->orderBy('created_at', 'asc')

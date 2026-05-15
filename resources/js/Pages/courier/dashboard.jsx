@@ -1,9 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, Suspense, lazy } from 'react';
+const RouteMap = lazy(() => import('../../Components/RouteMap'));
 
 export default function CourierDashboard({ auth, availableOrders, activeOrders, completedToday }) {
     const [activeTab, setActiveTab] = useState('available'); // 'available' | 'active'
     const [isProcessing, setIsProcessing] = useState(false);
+    const [showRouteMap, setShowRouteMap] = useState(null);
 
     const handleTakeOrder = (id) => {
         if (!confirm('Ambil pesanan ini untuk diantar?')) return;
@@ -34,7 +36,16 @@ export default function CourierDashboard({ auth, availableOrders, activeOrders, 
     const renderOrderCard = (order, type) => {
         const waLink = `https://wa.me/${formatPhoneForWA(order.nohp)}?text=Halo Kak ${order.nama}, ini kurir Dollin Donuts. Pesanan atas nama kakak sedang dalam perjalanan ya!`;
         
-        // Gunakan koordinat jika ada, jika tidak gunakan alamat teks (fallback)
+        // Fungsi untuk membuka peta rute internal
+        const openRouteMap = () => {
+            if (order.latitude && order.longitude) {
+                setShowRouteMap(order);
+            } else {
+                // Fallback ke Google Maps jika titik koordinat tidak ada (pesanan lama)
+                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.alamat)}`, '_blank');
+            }
+        };
+
         const mapsLink = order.latitude && order.longitude 
             ? `https://www.google.com/maps/dir/?api=1&destination=${order.latitude},${order.longitude}`
             : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.alamat)}`;
@@ -67,9 +78,12 @@ export default function CourierDashboard({ auth, availableOrders, activeOrders, 
 
                 {/* Aksi Cepat / Shortcut */}
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                    <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 py-2.5 rounded-xl text-xs font-bold transition-colors">
-                        <span className="material-symbols-outlined text-sm">map</span> Maps
-                    </a>
+                    <button 
+                        onClick={openRouteMap}
+                        className="flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 py-2.5 rounded-xl text-xs font-bold transition-colors"
+                    >
+                        <span className="material-symbols-outlined text-sm">map</span> Lihat Rute
+                    </button>
                     <a href={waLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 bg-green-50 text-green-700 hover:bg-green-100 py-2.5 rounded-xl text-xs font-bold transition-colors">
                         <span className="material-symbols-outlined text-sm">chat</span> WhatsApp
                     </a>
@@ -176,6 +190,66 @@ export default function CourierDashboard({ auth, availableOrders, activeOrders, 
                     )}
                 </div>
             </main>
+
+            {/* MODAL PETA RUTE */}
+            {showRouteMap && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-y-auto flex flex-col max-h-[95vh]">
+                        <div className="p-5 border-b flex justify-between items-center bg-primary/5 sticky top-0 z-[101] bg-white/80 backdrop-blur-md">
+                            <div>
+                                <h3 className="font-black text-primary text-lg">Rute Pengantaran</h3>
+                                <p className="text-xs text-on-surface-variant font-medium">#{showRouteMap.id_pesanan} - {showRouteMap.nama}</p>
+                            </div>
+                            <button 
+                                onClick={() => setShowRouteMap(null)}
+                                className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+                            >
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        
+                        <div className="flex-1 min-h-[400px] relative bg-surface-container">
+                            <Suspense fallback={
+                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                                    <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                                    <p className="text-sm font-bold text-primary">Menyiapkan Peta...</p>
+                                </div>
+                            }>
+                                <RouteMap 
+                                    from={[showRouteMap.branch?.latitude, showRouteMap.branch?.longitude]} 
+                                    to={[showRouteMap.latitude, showRouteMap.longitude]} 
+                                />
+                            </Suspense>
+                        </div>
+
+                        <div className="p-5 bg-white border-t space-y-3">
+                            <div className="flex gap-3 items-start bg-surface-container-low p-3 rounded-xl">
+                                <span className="material-symbols-outlined text-primary">location_on</span>
+                                <div>
+                                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Alamat Lengkap</p>
+                                    <p className="text-sm font-medium leading-snug">{showRouteMap.alamat}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => setShowRouteMap(null)}
+                                    className="flex-1 py-4 rounded-2xl bg-surface-container-high text-on-surface-variant font-bold text-sm"
+                                >
+                                    Tutup
+                                </button>
+                                <a 
+                                    href={`https://www.google.com/maps/dir/?api=1&destination=${showRouteMap.latitude},${showRouteMap.longitude}`}
+                                    target="_blank"
+                                    className="flex-1 py-4 rounded-2xl bg-primary text-on-primary font-black text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                                >
+                                    <span className="material-symbols-outlined text-[20px]">navigation</span>
+                                    Navigasi
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

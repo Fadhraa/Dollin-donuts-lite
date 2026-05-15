@@ -44,6 +44,7 @@ export default function Welcome({ products = [], branches = [] }) {
         longitude: '',
     });
     const [isProcessing, setIsProcessing] = useState(false);
+    const [distance, setDistance] = useState(0);
 
     const showNotification = (text, type) => {
         setShowInfoModal(true);
@@ -195,8 +196,8 @@ export default function Welcome({ products = [], branches = [] }) {
 
     };
 
-    // Fungsi Hitung Jarak (Haversine Formula)
-    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    // Fungsi Hitung Jarak Garis Lurus (Haversine Formula) sebagai cadangan
+    const calculateHaversine = (lat1, lon1, lat2, lon2) => {
         if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
         const R = 6371; // Radius Bumi dalam KM
         const dLat = (parseFloat(lat2) - parseFloat(lat1)) * (Math.PI / 180);
@@ -209,16 +210,40 @@ export default function Welcome({ products = [], branches = [] }) {
         return R * c; 
     };
 
+    // Effect untuk mengambil jarak rute jalan raya (OSRM)
+    useEffect(() => {
+        const fetchRouteDistance = async () => {
+            if (activeBranch?.latitude && activeBranch?.longitude && formData.latitude && formData.longitude) {
+                try {
+                    // OSRM menggunakan format [longitude, latitude]
+                    const url = `https://router.project-osrm.org/route/v1/driving/${activeBranch.longitude},${activeBranch.latitude};${formData.longitude},${formData.latitude}?overview=false`;
+                    const response = await axios.get(url);
+                    
+                    if (response.data.routes && response.data.routes[0]) {
+                        const routeDistance = response.data.routes[0].distance / 1000; // Konversi Meter ke KM
+                        setDistance(routeDistance);
+                    }
+                } catch (error) {
+                    console.error("OSRM Error, falling back to Haversine:", error);
+                    const hDist = calculateHaversine(
+                        activeBranch.latitude, activeBranch.longitude,
+                        formData.latitude, formData.longitude
+                    );
+                    setDistance(hDist);
+                }
+            }
+        };
+
+        // Debounce 1 detik agar tidak terlalu sering hit API saat user geser peta
+        const timer = setTimeout(fetchRouteDistance, 1000);
+        return () => clearTimeout(timer);
+    }, [formData.latitude, formData.longitude, activeBranch]);
+
     // Hitung secara langsung (variabel reaktif akan selalu ter-update jika cart berubah)
     const subTotal = cart.reduce((total, item) => total + (item.harga * item.qty), 0);
     const adminFee = subTotal * 0.01; // Web Fee 1%
     
-    // Hitung Jarak & Ongkir
-    const distance = calculateDistance(
-        activeBranch?.latitude, activeBranch?.longitude,
-        formData.latitude, formData.longitude
-    );
-
+    // Hitung Ongkir berdasarkan state distance
     let deliveryFee = 0;
     if (formData.delivery_method === 'delivery') {
         if (distance > 0) {
@@ -228,7 +253,7 @@ export default function Welcome({ products = [], branches = [] }) {
                 deliveryFee = 8000 + (Math.ceil(distance - 5) * 2000);
             }
         } else {
-            deliveryFee = 0; // Default jika belum pilih titik
+            deliveryFee = 0; 
         }
     }
 
@@ -592,7 +617,7 @@ export default function Welcome({ products = [], branches = [] }) {
                                         >
                                             <span className="material-symbols-outlined text-primary mb-1">local_shipping</span>
                                             <span className="text-base font-black text-primary">Pesan Antar</span>
-                                            <span className="text-[11px] font-medium text-on-surface-variant">Kurir Dollin (+10k)</span>
+                                            <span className="text-[11px] font-medium text-on-surface-variant">Kurir Dollin (+8k)</span>
                                         </div>
                                     </div>
                                 </div>
@@ -716,7 +741,7 @@ export default function Welcome({ products = [], branches = [] }) {
                                         }
                                     </div>
                                     <div className="flex justify-between items-center text-sm font-medium text-on-surface-variant border-b border-on-surface-variant/10 pb-2 mb-2">
-                                        <span>Biaya Pemeliharaan (1%)</span>
+                                        <span>Biaya Admin (1%)</span>
                                         <span>Rp {adminFee.toLocaleString('id-ID')}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm font-medium text-on-surface-variant">
