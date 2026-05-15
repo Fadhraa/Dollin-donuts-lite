@@ -16,22 +16,51 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $branchId = Auth::user()->branch_id;
-        // Jika dia admin cabang, kita tampilkan stok khusus cabangnya saja
-        // Jika dia superadmin (branch_id null), kita tampilkan semua stok
-        $products = Product::with(['stocks' => function ($query) use ($branchId) {
-            if ($branchId) {
+        $user = Auth::user();
+
+        if ($user->role === 'super_admin') {
+            // Owner memanajemen seluruh katalog produk
+            $products = Product::with('packageItems')->orderBy('created_at', 'desc')->get();
+            return inertia('owner/products', [
+                'satuanProducts' => Product::where('tipe', 'satuan')->get(),
+                'products' => $products
+            ]);
+        } else {
+            // Admin cabang hanya melihat produk dan mengelola stok cabangnya
+            $branchId = $user->branch_id;
+            $products = Product::with(['stocks' => function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId);
-            }
-        }])->orderBy('created_at', 'desc')->get();
-        return inertia('admin/products', [
-            'satuanProducts' => Product::where('tipe', 'satuan')->get(),
-            'products' => $products
+            }])->orderBy('created_at', 'desc')->get();
+            
+            return inertia('admin/products', [
+                'products' => $products
+            ]);
+        }
+    }
+
+    public function updateStock(Request $request, $id)
+    {
+        $user = Auth::user();
+        if ($user->role !== 'staff' || !$user->branch_id) {
+            return abort(403);
+        }
+
+        $request->validate([
+            'stock' => 'required|numeric|min:0'
         ]);
+
+        BranchStock::updateOrCreate(
+            ['product_id' => $id, 'branch_id' => $user->branch_id],
+            ['stock' => $request->stock]
+        );
+
+        return redirect()->back()->with('success', 'Stok berhasil diperbarui!');
     }
 
     public function store(Request $request)
     {
+        if (Auth::user()->role !== 'super_admin') return abort(403);
+
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
             'harga' => 'required|numeric|min:0',
@@ -89,6 +118,8 @@ class ProductController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (Auth::user()->role !== 'super_admin') return abort(403);
+
         $product = Product::findOrFail($id);
         $validated = $request->validate([
             'nama' => 'required|string|max:255',
@@ -167,6 +198,8 @@ class ProductController extends Controller
     }
     public function destroy($id)
     {
+        if (Auth::user()->role !== 'super_admin') return abort(403);
+
         $product = Product::findOrFail($id);
 
         // Opsional: Jika ada relasi paket, hapus dulu relasinya

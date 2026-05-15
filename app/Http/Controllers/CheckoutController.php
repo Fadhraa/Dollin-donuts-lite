@@ -25,6 +25,11 @@ class CheckoutController extends Controller
                 'order_status'   => 'Menunggu Konfirmasi',
                 'branch_id'  => $data['branch_id'] ?? null,
                 'payment_method' => $data['payment_method'] ?? null,
+                'delivery_method' => $data['delivery_method'] ?? 'pickup',
+                'delivery_fee' => $data['delivery_fee'] ?? 0,
+                'delivery_status' => ($data['delivery_method'] ?? 'pickup') === 'delivery' ? 'menunggu_kurir' : null,
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

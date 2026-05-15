@@ -136,7 +136,10 @@ function Orders({ orders = [], stats = [], filters = {} }) {
                                                     {/* Menampilkan sisa macam produk lainnya (jika ada) */}
                                                     {order.items.length > 1 ? ` +${order.items.length - 1} macam lainnya` : ''}
                                                 </p>
-                                                <p className="text-xs text-on-surface-variant font-mono">#{order.id_pesanan}</p>
+                                                <p className="text-xs text-on-surface-variant font-mono mb-1.5">#{order.id_pesanan}</p>
+                                                <span className={`inline-block text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider ${order.delivery_method === 'delivery' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                    {order.delivery_method === 'delivery' ? 'Pesan Antar' : 'Ambil di Toko'}
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-6">
@@ -173,6 +176,8 @@ function Orders({ orders = [], stats = [], filters = {} }) {
                                         <td className="px-6 py-6">
                                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                                                 order.order_status === 'Selesai' ? 'bg-tertiary-container text-on-tertiary-container border border-tertiary/10' :
+                                                order.order_status === 'Sedang Dikirim' ? 'bg-orange-100 text-orange-700 border border-orange-500/20' :
+                                                order.order_status === 'Siap Diantar' ? 'bg-blue-100 text-blue-700 border border-blue-500/20' :
                                                 order.order_status === 'Diproses' ? 'bg-primary-container text-on-primary-container border border-primary/10' :
                                                 'bg-secondary-container text-on-secondary-container border border-secondary/10'
                                             }`}>

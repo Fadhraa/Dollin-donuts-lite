@@ -16,7 +16,7 @@ class LandingController extends Controller
         $products = Product::with(['stocks', 'packageItems'])->where('is_active', true)->get();
 
         // Ambil juga daftar cabang agar user bisa pilih di frontend
-        $branches = Branch::all();
+        $branches = Branch::where('is_active', true)->get();
 
         return Inertia::render('Main', [
             'products' => $products,

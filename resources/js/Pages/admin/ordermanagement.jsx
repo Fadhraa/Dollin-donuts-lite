@@ -168,6 +168,8 @@ function OrderManagement({ orders = [], stats = {}, filters = {} }) {
                                         let selectColorClass = 'bg-surface-variant text-on-surface-variant border-none focus:ring-outline';
                                         if (order.order_status === 'Dikonfirmasi') selectColorClass = 'bg-primary-container text-on-primary-container border-none focus:ring-primary';
                                         if (order.order_status === 'Diproses') selectColorClass = 'bg-secondary-container text-on-secondary-container border-none focus:ring-secondary';
+                                        if (order.order_status === 'Siap Diantar') selectColorClass = 'bg-blue-100 text-blue-700 border-none focus:ring-blue-500';
+                                        if (order.order_status === 'Sedang Dikirim') selectColorClass = 'bg-orange-100 text-orange-700 border-none focus:ring-orange-500';
                                         if (order.order_status === 'Selesai') selectColorClass = 'bg-tertiary-container text-on-tertiary-container border-none focus:ring-tertiary';
 
                                         return (
@@ -182,8 +184,13 @@ function OrderManagement({ orders = [], stats = {}, filters = {} }) {
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-6">
-                                                    <div className="text-sm font-medium text-on-surface-variant max-w-[150px] truncate" title={order.alamat || '-'}>
-                                                        {order.alamat || '-'}
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <span className={`w-fit text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider ${order.delivery_method === 'delivery' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                            {order.delivery_method === 'delivery' ? 'Pesan Antar' : 'Ambil di Toko'}
+                                                        </span>
+                                                        <div className="text-sm font-medium text-on-surface-variant max-w-[150px] truncate" title={order.alamat || '-'}>
+                                                            {order.alamat || '-'}
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-6">
@@ -225,6 +232,8 @@ function OrderManagement({ orders = [], stats = {}, filters = {} }) {
                                                         <option value="Menunggu Konfirmasi">Menunggu Konfirmasi</option>
                                                         <option value="Dikonfirmasi">Dikonfirmasi</option>
                                                         <option value="Diproses">Diproses</option>
+                                                        {order.delivery_method === 'delivery' && <option value="Siap Diantar">Siap Diantar</option>}
+                                                        {order.delivery_method === 'delivery' && <option value="Sedang Dikirim">Sedang Dikirim (Kurir)</option>}
                                                         <option value="Selesai">Selesai</option>
                                                     </select>
                                                 </td>

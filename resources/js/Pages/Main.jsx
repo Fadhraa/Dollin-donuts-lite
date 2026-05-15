@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense, lazy } from 'react';
+const MapPicker = lazy(() => import('../Components/MapPicker'));
 import axios from 'axios';
 import Navbar from '@/Components/Navbar';
 
@@ -7,10 +8,17 @@ export default function Welcome({ products = [], branches = [] }) {
     useEffect(() => {
         const savedBranch = localStorage.getItem('selectedBranch');
         if (savedBranch) {
-            setActiveBranch(JSON.parse(savedBranch));
+            const parsed = JSON.parse(savedBranch);
+            // Sinkronkan dengan data terbaru dari props agar koordinat masuk
+            const latestBranch = branches.find(b => b.id === parsed.id);
+            if (latestBranch) {
+                setActiveBranch(latestBranch);
+            } else {
+                setActiveBranch(parsed);
+            }
             setShowBranchModal(false);
         }
-    }, []);
+    }, [branches]);
     const [activeTab, setActiveTab] = useState('Semua');
     const [activeType, setActiveType] = useState('satuan');
     const [activeBranch, setActiveBranch] = useState(null);
@@ -31,6 +39,9 @@ export default function Welcome({ products = [], branches = [] }) {
         nohp: '',
         alamat: '',
         payment_method: '',
+        delivery_method: 'pickup', // Default
+        latitude: '',
+        longitude: '',
     });
     const [isProcessing, setIsProcessing] = useState(false);
 
@@ -48,13 +59,37 @@ export default function Welcome({ products = [], branches = [] }) {
         setShowInfoModal(false)
         setMessage({ text: '', type: '' });
     }
+
+    const handleLocateMe = () => {
+        if (!navigator.geolocation) {
+            showNotification('Geolocation tidak didukung oleh browser Anda', 'error');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setFormData(prev => ({
+                    ...prev,
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                }));
+                showNotification('Lokasi berhasil dideteksi!', 'success');
+            },
+            (error) => {
+                let msg = 'Gagal mendeteksi lokasi.';
+                if (error.code === 1) msg = 'Izin lokasi ditolak. Silakan izinkan akses lokasi di browser Anda.';
+                showNotification(msg, 'error');
+            }
+        );
+    };
+
     const handleOrder = async (e) => {
         e.preventDefault();
 
         if (isProcessing) return;
 
-        if (!formData.nama || !formData.nohp || !formData.alamat) {
-            showNotification('Harap lengkapi data diri dan alamat pengiriman.', 'error');
+        if (formData.delivery_method === 'delivery' && !formData.alamat) {
+            showNotification('Harap lengkapi alamat pengiriman.', 'error');
             return;
         }
 
@@ -74,7 +109,7 @@ export default function Welcome({ products = [], branches = [] }) {
             ...formData,
             cart: cart,
             total: grandTotal,
-
+            delivery_fee: deliveryFee,
         };
         try{
             const response = await axios.post('/checkout', data);
@@ -160,10 +195,44 @@ export default function Welcome({ products = [], branches = [] }) {
 
     };
 
+    // Fungsi Hitung Jarak (Haversine Formula)
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+        const R = 6371; // Radius Bumi dalam KM
+        const dLat = (parseFloat(lat2) - parseFloat(lat1)) * (Math.PI / 180);
+        const dLon = (parseFloat(lon2) - parseFloat(lon1)) * (Math.PI / 180);
+        const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(parseFloat(lat1) * (Math.PI / 180)) * Math.cos(parseFloat(lat2) * (Math.PI / 180)) * 
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c; 
+    };
+
     // Hitung secara langsung (variabel reaktif akan selalu ter-update jika cart berubah)
     const subTotal = cart.reduce((total, item) => total + (item.harga * item.qty), 0);
     const adminFee = subTotal * 0.01; // Web Fee 1%
-    const grandTotal = subTotal + adminFee;
+    
+    // Hitung Jarak & Ongkir
+    const distance = calculateDistance(
+        activeBranch?.latitude, activeBranch?.longitude,
+        formData.latitude, formData.longitude
+    );
+
+    let deliveryFee = 0;
+    if (formData.delivery_method === 'delivery') {
+        if (distance > 0) {
+            if (distance <= 5) {
+                deliveryFee = 8000;
+            } else {
+                deliveryFee = 8000 + (Math.ceil(distance - 5) * 2000);
+            }
+        } else {
+            deliveryFee = 0; // Default jika belum pilih titik
+        }
+    }
+
+    const grandTotal = subTotal + adminFee + deliveryFee;
     const removeFromCart = (itemToRemove) => {
         // Filter berdasarkan uniqueId agar jika ada 2 box yg sama, yang terhapus cuma satu
         setCart(cart.filter(item => (item.uniqueId || item.id) !== (itemToRemove.uniqueId || itemToRemove.id)));
@@ -504,7 +573,30 @@ export default function Welcome({ products = [], branches = [] }) {
                         <h2 className="text-2xl font-bold text-primary mb-6 text-center">Data Pengiriman</h2>
                         <form onSubmit={handleOrder} className="space-y-4">
                             {/* Input Nama, Telp, Alamat di sini */}
+                            {/* Pilihan Delivery / Pickup */}
                             <div className="pt-6 border-t-2 border-dashed border-on-surface-variant/20 mt-6">
+                                <div>
+                                    <label className="block text-sm font-bold text-on-surface-variant mb-3">Metode Pengiriman</label>
+                                    <div className="grid grid-cols-2 gap-3 mb-6">
+                                        <div 
+                                            onClick={() => setFormData({ ...formData, delivery_method: 'pickup', alamat: 'Ambil di Toko' })}
+                                            className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-start gap-1 ${formData.delivery_method === 'pickup' ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-on-surface-variant/20 hover:border-primary/50'}`}
+                                        >
+                                            <span className="material-symbols-outlined text-primary mb-1">storefront</span>
+                                            <span className="text-base font-black text-primary">Ambil Sendiri</span>
+                                            <span className="text-[11px] font-medium text-on-surface-variant">Gratis Biaya</span>
+                                        </div>
+                                        <div 
+                                            onClick={() => setFormData({ ...formData, delivery_method: 'delivery', alamat: '' })}
+                                            className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-start gap-1 ${formData.delivery_method === 'delivery' ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-on-surface-variant/20 hover:border-primary/50'}`}
+                                        >
+                                            <span className="material-symbols-outlined text-primary mb-1">local_shipping</span>
+                                            <span className="text-base font-black text-primary">Pesan Antar</span>
+                                            <span className="text-[11px] font-medium text-on-surface-variant">Kurir Dollin (+10k)</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div>
                                     <label htmlFor="nama" className="block text-sm font-bold text-on-surface-variant mb-2">Nama Lengkap</label>
                                     <input required
@@ -527,18 +619,56 @@ export default function Welcome({ products = [], branches = [] }) {
                                     className="w-full px-4 py-3 rounded-xl border-2 border-on-surface-variant/10 focus:border-primary focus:outline-none" 
                                     placeholder="Masukkan No. HP Anda" />
                                 </div>
-                                <div>
-                                    <label htmlFor="alamat" className="block text-sm font-bold text-on-surface-variant mb-2">Alamat</label>
-                                    <input 
-                                    required 
-                                    name="alamat" 
-                                    type="text" 
-                                    id="alamat" 
-                                    onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
+                                 {formData.delivery_method === 'delivery' && (
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label htmlFor="alamat" className="block text-sm font-bold text-on-surface-variant mb-2">Alamat Lengkap Pengiriman</label>
+                                            <textarea 
+                                            required 
+                                            name="alamat" 
+                                            id="alamat" 
+                                            value={formData.alamat}
+                                            onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl border-2 border-on-surface-variant/10 focus:border-primary focus:outline-none min-h-[80px]" 
+                                            placeholder="Tuliskan alamat lengkap Anda (Jalan, RT/RW, Patokan)" />
+                                        </div>
 
-                                    className="w-full px-4 py-3 rounded-xl border-2 border-on-surface-variant/10 focus:border-primary focus:outline-none" 
-                                    placeholder="Masukkan Alamat Anda" />
-                                </div>
+                                        {/* Titik Lokasi Peta */}
+                                        <div>
+                                            <div className="flex justify-between items-end mb-2">
+                                                <div>
+                                                    <label className="block text-sm font-bold text-on-surface-variant">Titik Lokasi Pengiriman</label>
+                                                    <p className="text-[10px] text-on-surface-variant">Tandai lokasi akurat rumah Anda pada peta.</p>
+                                                </div>
+                                                <button 
+                                                    type="button"
+                                                    onClick={handleLocateMe}
+                                                    className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-[10px] font-bold hover:bg-primary/20 transition-all border border-primary/20"
+                                                >
+                                                    <span className="material-symbols-outlined text-[14px]">my_location</span>
+                                                    Gunakan Lokasi Saya
+                                                </button>
+                                            </div>
+                                            <div className="h-48 w-full rounded-2xl overflow-hidden border-2 border-on-surface-variant/10 z-0 relative bg-surface-container flex items-center justify-center">
+                                                <Suspense fallback={<div className="text-xs animate-pulse">Memuat Peta...</div>}>
+                                                    <MapPicker 
+                                                        latitude={formData.latitude || activeBranch?.latitude} 
+                                                        longitude={formData.longitude || activeBranch?.longitude}
+                                                        onChange={(lat, lng) => setFormData(prev => ({...prev, latitude: lat, longitude: lng}))}
+                                                        branchPosition={[activeBranch?.latitude, activeBranch?.longitude]}
+                                                        mapKey="buyer-map"
+                                                    />
+                                                </Suspense>
+                                            </div>
+                                            {formData.latitude && (
+                                                <div className="mt-2 flex items-center gap-1 text-[10px] text-green-600 font-bold">
+                                                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                                                    Titik lokasi berhasil ditandai
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                                 <div>
                                     <label htmlFor="payment_method" className="block text-sm font-bold text-on-surface-variant mb-3">Metode Pembayaran</label>
                                     <div className="grid grid-cols-2 gap-3">
@@ -585,9 +715,19 @@ export default function Welcome({ products = [], branches = [] }) {
 
                                         }
                                     </div>
-                                    <div className="flex justify-between items-center text-sm font-medium text-on-surface-variant">
+                                    <div className="flex justify-between items-center text-sm font-medium text-on-surface-variant border-b border-on-surface-variant/10 pb-2 mb-2">
                                         <span>Biaya Pemeliharaan (1%)</span>
                                         <span>Rp {adminFee.toLocaleString('id-ID')}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-medium text-on-surface-variant">
+                                        <div className="flex flex-col">
+                                            <span>Ongkos Kirim</span>
+                                            {distance > 0 && <span className="text-[10px] text-primary">Jarak: {distance.toFixed(1)} km</span>}
+                                            {formData.delivery_method === 'delivery' && !activeBranch?.latitude && (
+                                                <span className="text-[9px] text-red-500 font-bold">Lokasi cabang belum diset Owner</span>
+                                            )}
+                                        </div>
+                                        <span>{deliveryFee > 0 ? `Rp ${deliveryFee.toLocaleString('id-ID')}` : (formData.delivery_method === 'delivery' && distance === 0 ? 'Pilih lokasi...' : 'Gratis')}</span>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center my-6">
@@ -622,7 +762,7 @@ export default function Welcome({ products = [], branches = [] }) {
 
                         {/* List Donat yang tersedia untuk Paket ini */}
                         <div className="p-6 max-h-[50vh] overflow-y-auto grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {(configuringBox.package_items || []).map(item => (
+                            {((configuringBox.packageItems || configuringBox.package_items) || []).map(item => (
                                 <div
                                     key={item.id}
                                     onClick={() => toggleItemInBox(item.id)}

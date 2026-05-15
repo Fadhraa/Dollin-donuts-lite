@@ -83,7 +83,7 @@ class OrderController extends Controller
                 $query->whereBetween('created_at', [Carbon::now()->subDays(7), Carbon::now()]);
             } elseif ($request->waktu == 'bulan_ini') {
                 $query->whereMonth('created_at', Carbon::now()->month)
-                      ->whereYear('created_at', Carbon::now()->year);
+                    ->whereYear('created_at', Carbon::now()->year);
             }
         }
 
@@ -103,7 +103,7 @@ class OrderController extends Controller
                 $statsQuery->whereBetween('created_at', [Carbon::now()->subDays(7), Carbon::now()]);
             } elseif ($request->waktu == 'bulan_ini') {
                 $statsQuery->whereMonth('created_at', Carbon::now()->month)
-                      ->whereYear('created_at', Carbon::now()->year);
+                    ->whereYear('created_at', Carbon::now()->year);
             }
         }
 
@@ -228,7 +228,10 @@ class OrderController extends Controller
         if ($admin && $admin->branch_id) {
             $statsQuery->where('branch_id', $admin->branch_id);
         }
-
+        $branches = [];
+        if ($admin && $admin->role === 'super_admin') {
+            $branches = \App\Models\Branch::all();
+        }
         $pendapatan_hari_ini = (clone $statsQuery)->whereDate('updated_at', today())->whereIn('payment_status', ['success', 'settlement', 'capture'])->sum('total');
         $pendapatan_kemarin = (clone $statsQuery)->whereDate('updated_at', today()->subDay())->whereIn('payment_status', ['success', 'settlement', 'capture'])->sum('total');
 
@@ -250,7 +253,9 @@ class OrderController extends Controller
 
         return \Inertia\Inertia::render('admin/dashboard', [
             'stats' => $stats,
-            'recent_orders' => $recent_orders
+            'recent_orders' => $recent_orders,
+            'branches' => $branches,
+
         ]);
     }
 }
