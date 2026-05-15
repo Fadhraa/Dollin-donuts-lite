@@ -89,6 +89,11 @@ export default function Welcome({ products = [], branches = [] }) {
 
         if (isProcessing) return;
 
+        if (cart.length === 0) {
+            showNotification('Keranjang belanja Anda masih kosong!', 'error');
+            return;
+        }
+
         if (formData.delivery_method === 'delivery' && !formData.alamat) {
             showNotification('Harap lengkapi alamat pengiriman.', 'error');
             return;
@@ -115,6 +120,19 @@ export default function Welcome({ products = [], branches = [] }) {
         try{
             const response = await axios.post('/checkout', data);
             if(response.data.status === 'success'){
+                // Reset Cart dan Form Data segera setelah pesanan terkirim ke database
+                setCart([]);
+                setFormData({
+                    nama: '',
+                    nohp: '',
+                    alamat: '',
+                    payment_method: '',
+                    delivery_method: 'pickup',
+                    latitude: '',
+                    longitude: '',
+                });
+                setDistance(0);
+
                 window.snap.pay(response.data.snap_token, {
                     onSuccess: function(result) {
                         showNotification('Pembayaran berhasil!', 'success');

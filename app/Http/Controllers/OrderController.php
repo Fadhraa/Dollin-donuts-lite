@@ -49,7 +49,7 @@ class OrderController extends Controller
             'nohp' => 'required|string'
         ]);
 
-        $orders = Order::with('branch')
+        $orders = Order::with(['branch', 'courier'])
             ->where('nohp', $request->nohp)
             ->orderBy('created_at', 'desc')
             ->get();

@@ -1,27 +1,90 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
+import { useState } from 'react';
 
 export default function Navbar({ branches, activeBranch, setActiveBranch, showBranchModal, setShowBranchModal }) {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { url } = usePage();
+    
+    // Logika deteksi aktif yang lebih kuat (menangani parameter URL)
+    const isHomeActive = url === '/' || url.startsWith('/?');
+    const isPesananActive = url.startsWith('/Pesanan');
+
     return (
         <>
             {/* TopNavBar */}
             <nav className="fixed top-0 w-full z-50 bg-[#fef6e7]/80 dark:bg-[#322e25]/80 backdrop-blur-xl shadow-sm dark:shadow-none">
-                <div className="relative flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
-                    <span className="text-2xl font-bold tracking-tight text-[#76543d] dark:text-[#fef6e7] brand-font">Dollin Donuts</span>
-                    <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-8">
-                        <Link href="/" className="text-[#76543d] hover:font-bold hover:border-b-2 hover:border-[#76543d] pb-1 body-md cursor-pointer transition-opacity duration-300">Menu</Link>
-                        <Link href="/Pesanan" className="text-[#76543d] hover:font-bold hover:border-b-2 hover:border-[#76543d] pb-1 body-md cursor-pointer transition-all duration-100">Status Pesanan</Link>
-                    </div>
-                    <div className="flex items-end gap-4">
-                        <div>
-                            <span className='text-xs font-bold text-on-surface-variant tracking-widest'>LOKASI PENGAMBILAN: </span>
-                            <h3 className='text-lg font-bold text-primary'>{activeBranch?.nama || 'Pilih Outlet'}</h3>
-                        </div>
-                        <button
-                            onClick={() => setShowBranchModal(true)}
-                            className="ml-2 py-1 text-xs font-bold text-on-surface-variant hover:text-primary underline decoration-dotted underline-offset-4 transition-colors"
+                <div className="relative flex justify-between items-center px-4 md:px-8 py-2 md:py-4 max-w-7xl mx-auto min-h-[56px] md:min-h-[64px]">
+                    {/* Hamburger Button (Mobile Only) */}
+                    <div className="md:hidden flex items-center">
+                        <button 
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="p-2 text-[#76543d] hover:bg-primary/5 rounded-xl transition-all flex items-center justify-center"
                         >
-                            Ganti
+                            <span className="material-symbols-outlined text-2xl leading-none">
+                                {isMenuOpen ? 'close' : 'menu'}
+                            </span>
                         </button>
+                    </div>
+
+                    <div className="flex items-center">
+                        <span className="text-xl md:text-2xl font-bold tracking-tight text-[#76543d] dark:text-[#fef6e7] brand-font shrink-0 leading-none">Dollin Donuts</span>
+                    </div>
+                    
+                    <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-8 h-full">
+                        <Link 
+                            href="/" 
+                            className={`text-[#76543d] hover:font-bold border-b-2 pb-1 body-md cursor-pointer transition-all duration-300 ${isHomeActive ? 'font-bold border-[#76543d]' : 'border-transparent'}`}
+                        >
+                            Menu
+                        </Link>
+                        <Link 
+                            href="/Pesanan" 
+                            className={`text-[#76543d] hover:font-bold border-b-2 pb-1 body-md cursor-pointer transition-all duration-300 ${isPesananActive ? 'font-bold border-[#76543d]' : 'border-transparent'}`}
+                        >
+                            Status Pesanan
+                        </Link>
+                    </div>
+
+                    <div className="flex items-center gap-2 md:gap-4 ml-auto h-full">
+                        <div className="text-right hidden sm:flex flex-col justify-center">
+                            <span className='hidden md:inline text-[10px] font-black text-on-surface-variant tracking-widest uppercase leading-none mb-1'>Outlet: </span>
+                            <h3 className='text-xs md:text-lg font-bold text-primary leading-none'>{activeBranch?.nama || 'Pilih Outlet'}</h3>
+                        </div>
+                        <div className="flex items-center">
+                            <button
+                                onClick={() => setShowBranchModal(true)}
+                                className="py-2 px-2 text-[10px] md:text-xs font-bold text-on-surface-variant hover:text-primary underline decoration-dotted underline-offset-4 transition-colors shrink-0 flex items-center"
+                            >
+                                {activeBranch?.nama ? 'Ganti' : 'Pilih Outlet'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile Menu Dropdown */}
+                <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out bg-white backdrop-blur-lg border-b border-primary/10 ${isMenuOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'}`}>
+                    <div className="p-4 space-y-2">
+                        <Link 
+                            href="/" 
+                            onClick={() => setIsMenuOpen(false)}
+                            className={`flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-95 font-bold ${isHomeActive ? 'bg-primary/10 text-primary shadow-sm' : 'text-on-surface-variant bg-transparent'}`}
+                        >
+                            <span className="material-symbols-outlined">bakery_dining</span>
+                            Beli Donat
+                        </Link>
+                        <Link 
+                            href="/Pesanan" 
+                            onClick={() => setIsMenuOpen(false)}
+                            className={`flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-95 font-bold ${isPesananActive ? 'bg-primary/10 text-primary shadow-sm' : 'text-on-surface-variant bg-transparent'}`}
+                        >
+                            <span className="material-symbols-outlined">receipt_long</span>
+                            Status Pesanan
+                        </Link>
+                        {/* Info Outlet di dalam menu mobile */}
+                        <div className="mt-4 p-4 rounded-2xl border border-dashed border-primary/20">
+                            <p className="text-[10px] font-black text-primary/60 uppercase tracking-widest mb-1">Outlet Saat Ini:</p>
+                            <p className="font-bold text-on-surface">{activeBranch?.nama || 'Belum Memilih'}</p>
+                        </div>
                     </div>
                 </div>
             </nav>

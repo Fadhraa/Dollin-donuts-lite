@@ -127,7 +127,7 @@ export default function StatusPesanan({ branches = [] }) {
                 return <span className="px-3 py-1 bg-surface-container-highest text-on-surface rounded-full text-xs font-bold border border-outline-variant">{status || 'Menunggu'}</span>;
         }
     };
-
+    console.log(activeOrders)
     return (
         <div className="min-h-screen bg-background font-body selection:bg-primary-container selection:text-on-primary-container">
             <Head title="Cek Status Pesanan - Dollin Donuts">
@@ -304,7 +304,12 @@ export default function StatusPesanan({ branches = [] }) {
                                             Status Dapur
                                         </p>
                                         <div>{getOrderStatusBadge(order.order_status)}</div>
-                                        <p className="mt-3 text-[11px] text-on-surface-variant font-medium">Melacak progres pesanan</p>
+                                        {order.order_status === 'Sedang Dikirim' && (
+                                            <p className="mt-3 text-[11px] text-on-surface-variant font-medium">Kurir: <strong className="text-primary">{order.courier?.name || 'Petugas Dollin'}</strong></p>
+                                        )}
+                                        {order.order_status === 'Sedang Dikirim' && (
+                                            <p className="mt-3 text-[11px] text-on-surface-variant font-medium">Kurir akan menghubungi anda jika diperlukan</p>
+                                        )}
                                     </div>
                                 </div>
                                 

@@ -17,4 +17,9 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public function courier()
+    {
+        return $this->belongsTo(User::class, 'courier_id');
+    }
 }

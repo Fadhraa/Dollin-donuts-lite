@@ -26,6 +26,7 @@
         "dayjs": "^1.11.20",
         "leaflet": "^1.9.4",
         "react-leaflet": "^4.2.1",
+        "socket.io-client": "^4.8.3",
         "xlsx": "^0.18.5"
     }
 }

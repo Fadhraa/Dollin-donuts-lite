@@ -19,7 +19,7 @@ class CheckoutController extends Controller
                 'id_pesanan' => $data['id_pesanan'],
                 'nama'       => $data['nama'],
                 'nohp'       => $data['nohp'],
-                'alamat'     => $data['alamat'],
+                'alamat'     => $data['alamat'] ?? 'Ambil di Toko',
                 'total'      => $data['total'],
                 'payment_status'     => 'pending',
                 'order_status'   => 'Menunggu Konfirmasi',
