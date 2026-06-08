@@ -68,7 +68,7 @@ function Products({ products = [], satuanProducts = [] }) {
     };
     const submitData = (e) => {
         e.preventDefault();
-        if(isEdit){
+        if (isEdit) {
             post(`/owner/products/${editId}`, {
                 forceFormData: true,
                 onSuccess: () => {
@@ -76,14 +76,14 @@ function Products({ products = [], satuanProducts = [] }) {
                     reset();
                 },
             });
-        }else{
+        } else {
             post('/owner/products', {
                 forceFormData: true,
                 onSuccess: () => {
                     setModalProduct(false);
-                reset();
-            },
-        });
+                    reset();
+                },
+            });
         }
     }
 
@@ -112,8 +112,8 @@ function Products({ products = [], satuanProducts = [] }) {
                     <div>
                         <p>Ayo buat produk baru yang menarik untuk pelanggan</p>
                     </div>
-                    <div 
-                        onClick={openModalProduct} 
+                    <div
+                        onClick={openModalProduct}
                         className="flex items-center gap-2 bg-primary px-5 py-3 rounded-2xl cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
                     >
                         <span className="material-symbols-outlined bg-on-primary text-primary rounded-full p-1 text-sm font-bold group-hover: transition-transform">add</span>
@@ -138,14 +138,14 @@ function Products({ products = [], satuanProducts = [] }) {
                         {/* Form Modal */}
                         <form onSubmit={submitData}>
                             <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
-                                
+
                                 {/* Nama Produk */}
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-bold text-on-surface-variant mb-1">Nama Produk</label>
                                     <input type="text" value={data.nama} onChange={e => setData('nama', e.target.value)} placeholder="Contoh: Choco Melt Donut" className="w-full bg-surface-container border border-on-surface-variant/20 focus:border-primary focus:ring-2 focus:ring-primary/10 rounded-xl px-4 py-2 text-sm outline-none" />
                                     {errors.nama && <span className="text-red-500 text-xs">{errors.nama}</span>}
                                 </div>
-                                
+
                                 {/* Harga & Stok */}
                                 <div>
                                     <label className="block text-sm font-bold text-on-surface-variant mb-1">Harga (Rp)</label>
@@ -161,12 +161,12 @@ function Products({ products = [], satuanProducts = [] }) {
                                             <option value="donuts">Donuts</option>
                                             <option value="mochi">Mochi</option>
                                             <option value="minuman">Minuman</option>
-                                            <option value="pastry">Pastry</option>
+
                                         </select>
                                         {errors.kategori && <span className="text-red-500 text-xs">{errors.kategori}</span>}
                                     </div>
                                 )}
-                                <div  className={data.tipe === 'paket' ? "md:col-span-2" : ""}>
+                                <div className={data.tipe === 'paket' ? "md:col-span-2" : ""}>
                                     <label className="block text-sm font-bold text-on-surface-variant mb-1">Tipe Penjualan</label>
                                     <select disabled={isEdit} value={data.tipe} onChange={e => {
                                         setData('tipe', e.target.value);
@@ -206,9 +206,9 @@ function Products({ products = [], satuanProducts = [] }) {
                                                     <p className="col-span-full text-center text-sm text-on-surface-variant opacity-70 p-4">Belum ada donat satuan. Tambahkan minimal 1 donat satuan terlebih dahulu ya!</p>
                                                 )}
                                                 {satuanProducts.map(prod => (
-                                                    <div 
-                                                        key={prod.id} 
-                                                        onClick={() => togglePackageItem(prod.id)} 
+                                                    <div
+                                                        key={prod.id}
+                                                        onClick={() => togglePackageItem(prod.id)}
                                                         className={`cursor-pointer rounded-xl p-3 flex flex-col items-center gap-2 border-2 transition-all relative ${data.package_items.includes(prod.id) ? 'border-primary bg-primary/10 shadow-md transform scale-105' : 'border-on-surface-variant/10 bg-surface hover:bg-surface-variant/50'}`}
                                                     >
                                                         {data.package_items.includes(prod.id) && <span className="absolute -top-2 -right-2 material-symbols-outlined text-primary bg-background rounded-full text-xl shadow-sm">check_circle</span>}
@@ -252,7 +252,7 @@ function Products({ products = [], satuanProducts = [] }) {
                                     <div className={`group border-2 border-dashed rounded-xl flex flex-col items-center justify-center bg-surface-container/50 transition-colors cursor-pointer relative overflow-hidden ${data.gambar || oldGambar ? 'border-primary/50 h-56 hover:border-primary' : 'border-on-surface-variant/30 h-32 hover:bg-surface-container'}`}>
                                         {/* Invisible file input that tightly covers the exact shape wrapper */}
                                         <input type="file" onChange={e => setData('gambar', e.target.files[0])} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" accept="image/*" />
-                                        
+
                                         {(data.gambar || oldGambar) ? (
                                             <div className="absolute inset-0 w-full h-full z-10 pointer-events-none">
                                                 <img src={data.gambar ? URL.createObjectURL(data.gambar) : oldGambar} alt="Preview Foto" className="w-full h-full object-cover" />
@@ -353,7 +353,7 @@ function Products({ products = [], satuanProducts = [] }) {
                 </div>
             </div>
         </>
-   
+
     );
 }
 

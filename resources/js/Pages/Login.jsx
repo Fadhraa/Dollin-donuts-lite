@@ -1,13 +1,12 @@
 import { Link, useForm } from "@inertiajs/react";
-
-
-
+import { useState } from "react";
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
         email: '',
         password: '',
     });
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -22,8 +21,17 @@ export default function Login() {
 
                         <h1 className="font-headline text-5xl font-black tracking-tight text-on-surface mb-3">Selamat Datang Kembali</h1>
                         <p className="font-body text-base text-on-surface mb-8">Silahkan login untuk melanjutkan</p>
+                        
+                        {/* Error Notification */}
+                        {errors.email && (
+                            <div className="bg-red-50 dark:bg-red-950/20 text-red-600 dark:text-red-400 p-4 rounded-xl text-sm font-semibold mb-6 border border-red-100 dark:border-red-900/30 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <span className="material-symbols-outlined text-lg">error</span>
+                                {errors.email}
+                            </div>
+                        )}
+
                         {/* form login */}
-                        <div className="flex flex-col gap-2">
+                        <div className="flex flex-col gap-2 mb-4">
                             <label className="text-on-surface font-semibold px-1" htmlFor="Email">Email</label>
                             <input
                             className="w-full h-16 px-6 rounded-xl bg-surface-container-high border-none focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline transition-all"
@@ -36,18 +44,30 @@ export default function Login() {
                         </div>
                         <div className="flex flex-col gap-2">
                             <label className="text-on-surface font-semibold px-1" htmlFor="password">Password</label>
-                            <input
-                            className="w-full h-16 px-6 rounded-xl bg-surface-container-high border-none focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline transition-all"
-                            placeholder="Masukan password anda" 
-                            required
-                            value={data.password}
-                            type="password" onChange={(e) => setData('password', e.target.value)} />
+                            <div className="relative">
+                                <input
+                                className="w-full h-16 pl-6 pr-12 rounded-xl bg-surface-container-high border-none focus:ring-2 focus:ring-primary/20 text-on-surface placeholder:text-outline transition-all"
+                                placeholder="Masukan password anda" 
+                                required
+                                value={data.password}
+                                type={showPassword ? "text" : "password"} 
+                                onChange={(e) => setData('password', e.target.value)} />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/70 hover:text-on-surface transition-colors flex items-center justify-center cursor-pointer"
+                                >
+                                    <span className="material-symbols-outlined text-xl">
+                                        {showPassword ? "visibility_off" : "visibility"}
+                                    </span>
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <button 
                             type="submit"
                             disabled={processing}
-                            className=" mt-6 w-full h-16 bg-primary text-on-primary font-headline font-bold text-lg rounded-xl hover:bg-primary-dim transition-all shadow-lg shadow-primary/10">
+                            className=" mt-6 w-full h-16 bg-primary text-on-primary font-headline font-bold text-lg rounded-xl hover:bg-primary-dim transition-all shadow-lg shadow-primary/10 cursor-pointer">
                                 Sign In
                             </button>
                         </div>

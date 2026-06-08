@@ -5,6 +5,15 @@
 
     RewriteEngine On
 
+    # ----------------------------------------------------------------------
+    # SISTEM KEAMANAN: Blokir Akses Langsung ke Berkas Sensitif
+    # ----------------------------------------------------------------------
+    # Blokir akses ke file .env
+    RewriteRule ^\.env$ - [F,L]
+
+    # Blokir akses ke folder src, vendor, sessions, dan database sql
+    RewriteRule ^(src|vendor|sessions|database\.sql) - [F,L]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

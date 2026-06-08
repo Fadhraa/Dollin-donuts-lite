@@ -9,6 +9,28 @@ function Orders({ orders = [], stats = [], filters = {} }) {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 5;
 
+    const formatPhoneNumber = (phone) => {
+        if (!phone) return "";
+        let cleaned = phone.replace(/\D/g, "");
+        if (cleaned.startsWith("0")) {
+            cleaned = "62" + cleaned.slice(1);
+        }
+        return cleaned;
+    };
+
+    const handleContactCustomer = (order) => {
+        const phone = formatPhoneNumber(order.nohp);
+        if (!phone) {
+            alert("Nomor HP pelanggan tidak ditemukan atau tidak valid.");
+            return;
+        }
+        const message = order.delivery_method === 'delivery'
+            ? `Halo *${order.nama}*, pesanan Anda dengan ID *${order.id_pesanan}* di Dollin Donuts telah selesai dan siap diantar. Terima kasih!`
+            : `Halo *${order.nama}*, pesanan Anda dengan ID *${order.id_pesanan}* di Dollin Donuts telah selesai dan siap diambil di toko. Terima kasih!`;
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+        window.open(url, '_blank');
+    };
+
     const handleFilterChange = (e) => {
         const selectedWaktu = e.target.value;
         setFilterWaktu(selectedWaktu);
@@ -123,77 +145,101 @@ function Orders({ orders = [], stats = [], filters = {} }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-outline-variant/10">
-                                {currentOrders.map((order, index) => (
-
-                                
-                                    <tr key={index} className="hover:bg-surface-container-low transition-colors group">
-                                        <td className="px-8 py-6">
-                                            <div>
-                                                <p className="font-bold text-primary text-base brand-logo">
-                                                    {/* Menambahkan qty di depan nama produk pertama */}
-                                                    {order.items.length > 0 ? `${order.items[0].qty}x ${order.items[0].product.nama}` : 'Pesanan'}
-                                                    
-                                                    {/* Menampilkan sisa macam produk lainnya (jika ada) */}
-                                                    {order.items.length > 1 ? ` +${order.items.length - 1} macam lainnya` : ''}
-                                                </p>
-                                                <p className="text-xs text-on-surface-variant font-mono mb-1.5">#{order.id_pesanan}</p>
-                                                <span className={`inline-block text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider ${order.delivery_method === 'delivery' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                    {order.delivery_method === 'delivery' ? 'Pesan Antar' : 'Ambil di Toko'}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-6">
-                                            <div className="flex -space-x-3 py-1 pr-2">
-                                                {order.items.slice(0, 2).map((item, idx) => (
-                                                    <div key={idx} className="relative inline-block">
-                                                        {item.product.gambar ? (
-                                                            <img className="inline-block h-10 w-10 rounded-full ring-2 ring-surface object-cover bg-white" alt={item.product.nama} src={`${item.product.gambar}`} />
-                                                        ) : (
-                                                            <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-highest ring-2 ring-surface text-lg">🍩</div>
-                                                        )}
-                                                        
-                                                        {/* Menambahkan Badge Qty Kecil di Atas Gambar */}
-                                                        {item.qty > 1 && (
-                                                            <span className="absolute -top-1 -right-1 bg-primary text-on-primary text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-surface z-10">
-                                                                {item.qty}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                                {order.items.length > 2 && (
-                                                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-highest ring-2 ring-surface text-[10px] font-bold text-on-surface-variant z-0">
-                                                        +{order.items.length - 2}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-6">
-                                            <div className="text-sm">
-                                                <p className="font-medium">{dayjs(order.created_at).format('MMM DD, YYYY')}</p>
-                                                <p className="text-on-surface-variant text-xs">{dayjs(order.created_at).format('hh:mm A')}</p>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-6">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                                order.order_status === 'Selesai' ? 'bg-tertiary-container text-on-tertiary-container border border-tertiary/10' :
-                                                order.order_status === 'Sedang Dikirim' ? 'bg-orange-100 text-orange-700 border border-orange-500/20' :
-                                                order.order_status === 'Siap Diantar' ? 'bg-blue-100 text-blue-700 border border-blue-500/20' :
-                                                order.order_status === 'Diproses' ? 'bg-primary-container text-on-primary-container border border-primary/10' :
-                                                'bg-secondary-container text-on-secondary-container border border-secondary/10'
-                                            }`}>
-                                                {order.order_status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-6">
-                                            <p className="font-bold text-primary">Rp {order.total.toLocaleString('id-ID')}</p>
-                                        </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <button className="p-2 hover:bg-primary-container/20 rounded-full text-primary transition-all">
-                                                <span className="material-symbols-outlined">visibility</span>
-                                            </button>
+                                {currentOrders.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="6" className="px-8 py-10 text-center text-on-surface-variant">
+                                            Belum ada pesanan masuk.
                                         </td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    currentOrders.map((order, index) => {
+                                        const initials = order.nama.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                                        
+                                        return (
+                                            <tr key={index} className="hover:bg-surface-container-low transition-colors group">
+                                                <td className="px-8 py-6">
+                                                    <div>
+                                                        <p className="font-bold text-primary text-base brand-logo">
+                                                            {/* Menambahkan qty di depan nama produk pertama */}
+                                                            {order.items.length > 0 ? `${order.items[0].qty}x ${order.items[0].product.nama}` : 'Pesanan'}
+                                                            
+                                                            {/* Menampilkan sisa macam produk lainnya (jika ada) */}
+                                                            {order.items.length > 1 ? ` +${order.items.length - 1} macam lainnya` : ''}
+                                                        </p>
+                                                        <p className="text-xs text-on-surface-variant font-mono mb-1.5">#{order.id_pesanan}</p>
+                                                        <span className={`inline-block text-[9px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider ${order.delivery_method === 'delivery' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                            {order.delivery_method === 'delivery' ? 'Pesan Antar' : 'Ambil di Toko'}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <div className="flex -space-x-3 py-1 pr-2">
+                                                        {order.items.slice(0, 2).map((item, idx) => (
+                                                            <div key={idx} className="relative inline-block">
+                                                                {item.product.gambar ? (
+                                                                    <img className="inline-block h-10 w-10 rounded-full ring-2 ring-surface object-cover bg-white" alt={item.product.nama} src={`${item.product.gambar}`} />
+                                                                ) : (
+                                                                    <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-highest ring-2 ring-surface text-lg">🍩</div>
+                                                                )}
+                                                                
+                                                                {/* Menambahkan Badge Qty Kecil di Atas Gambar */}
+                                                                {item.qty > 1 && (
+                                                                    <span className="absolute -top-1 -right-1 bg-primary text-on-primary text-[9px] font-bold px-1.5 py-0.5 rounded-full ring-2 ring-surface z-10">
+                                                                        {item.qty}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                        {order.items.length > 2 && (
+                                                            <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-container-highest ring-2 ring-surface text-[10px] font-bold text-on-surface-variant z-0">
+                                                                +{order.items.length - 2}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <div className="text-sm">
+                                                        <p className="font-medium">{dayjs(order.created_at).format('MMM DD, YYYY')}</p>
+                                                        <p className="text-on-surface-variant text-xs">{dayjs(order.created_at).format('hh:mm A')}</p>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                                        order.order_status === 'Selesai' ? 'bg-tertiary-container text-on-tertiary-container border border-tertiary/10' :
+                                                        order.order_status === 'Sedang Dikirim' ? 'bg-orange-100 text-orange-700 border border-orange-500/20' :
+                                                        order.order_status === 'Siap Diantar' ? 'bg-blue-100 text-blue-700 border border-blue-500/20' :
+                                                        order.order_status === 'Diproses' ? 'bg-primary-container text-on-primary-container border border-primary/10' :
+                                                        'bg-secondary-container text-on-secondary-container border border-secondary/10'
+                                                    }`}>
+                                                        {order.order_status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <p className="font-bold text-primary">Rp {order.total.toLocaleString('id-ID')}</p>
+                                                </td>
+                                                <td className="px-8 py-6 text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        {order.order_status === 'Selesai' && (
+                                                            <button 
+                                                                onClick={() => handleContactCustomer(order)}
+                                                                className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 hover:text-emerald-700 rounded-xl transition-all duration-200 inline-flex items-center gap-1.5 shadow-sm border border-emerald-500/20"
+                                                                title="Hubungi Pelanggan via WhatsApp"
+                                                            >
+                                                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                                    <path d="M12 2C6.477 2 2 6.477 2 12c0 1.76.45 3.41 1.25 4.86L2 22l5.31-1.39C8.71 21.4 10.3 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm4.33 13.06c-.19.54-.95 1.02-1.42 1.08-.39.05-.88.1-2.58-.58-2.17-.87-3.56-3.04-3.67-3.18-.11-.15-.89-1.16-.89-2.22 0-1.06.55-1.58.75-1.79.2-.21.43-.26.57-.26.14 0 .28 0 .4.01.12.01.29-.05.45.34.17.4.58 1.39.63 1.49.05.1.08.22.01.35-.07.13-.15.22-.29.39-.14.17-.3.38-.43.51-.15.15-.31.32-.13.63.18.31.78 1.29 1.68 2.09.91.81 1.68 1.06 1.92 1.18.24.12.38.1.52-.06.14-.16.63-.73.8-1 .17-.27.34-.23.57-.14.23.09 1.47.69 1.72.82.25.13.42.19.48.3.06.11.06.66-.13 1.2z" />
+                                                                </svg>
+                                                                <span className="text-xs font-bold font-sans">Hubungi</span>
+                                                            </button>
+                                                        )}
+                                                        <button className="p-2 hover:bg-primary-container/20 rounded-full text-primary transition-all" title="Lihat Detail Pesanan">
+                                                            <span className="material-symbols-outlined">visibility</span>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
                             </tbody>
                         </table>
                     </div>

@@ -31,7 +31,7 @@ export default function Welcome({ products = [], branches = [] }) {
     const [showWaModal, setShowWaModal] = useState(false);
     const [configuringBox, setConfiguringBox] = useState(null);
     const [selectedBoxItems, setSelectedBoxItems] = useState([]);
-    
+
     const [favorites, setFavorites] = useState([]);
     const [cart, setCart] = useState([]);
     const [formData, setFormData] = useState({
@@ -49,7 +49,7 @@ export default function Welcome({ products = [], branches = [] }) {
     const showNotification = (text, type) => {
         setShowInfoModal(true);
         setMessage({ text, type });
-        
+
         // Menghilangkan notifikasi otomatis setelah 3 detik
         setTimeout(() => {
             setShowInfoModal(false);
@@ -117,9 +117,9 @@ export default function Welcome({ products = [], branches = [] }) {
             total: grandTotal,
             delivery_fee: deliveryFee,
         };
-        try{
+        try {
             const response = await axios.post('/checkout', data);
-            if(response.data.status === 'success'){
+            if (response.data.status === 'success') {
                 // Reset Cart dan Form Data segera setelah pesanan terkirim ke database
                 setCart([]);
                 setFormData({
@@ -134,31 +134,31 @@ export default function Welcome({ products = [], branches = [] }) {
                 setDistance(0);
 
                 window.snap.pay(response.data.snap_token, {
-                    onSuccess: function(result) {
+                    onSuccess: function (result) {
                         showNotification('Pembayaran berhasil!', 'success');
                         setCart([]); // Kosongkan keranjang
                         setIsProcessing(false);
                         window.location.href = '/Pesanan';
                     },
-                    onPending: function(result) {
+                    onPending: function (result) {
                         showNotification('Menunggu pembayaran Anda.', 'info');
                         setIsProcessing(false);
                     },
-                    onError: function(result) {
+                    onError: function (result) {
                         showNotification('Pembayaran gagal.', 'error');
                         setIsProcessing(false);
                     },
-                    onClose: function() {
+                    onClose: function () {
                         showNotification('Anda menutup jendela sebelum menyelesaikan pembayaran', 'error');
                         setIsProcessing(false);
                     }
                 });
             }
-        }catch (error) {
+        } catch (error) {
             setIsProcessing(false);
             // Tampilkan detail error dari backend ke Console
             console.log("Detail Error:", error.response?.data);
-            
+
             // Tampilkan pesan error spesifik ke Toast Notification kita
             const errorMessage = error.response?.data?.message || 'Terjadi kesalahan internal server.';
             showNotification(errorMessage, 'error');
@@ -176,15 +176,15 @@ export default function Welcome({ products = [], branches = [] }) {
                     showNotification(`Stok ${product.nama} di cabang ${activeBranch.nama} habis`, 'error');
                     return;
                 }
-                setCart(cart.map(item => 
+                setCart(cart.map(item =>
                     item.id === product.id ? { ...item, qty: item.qty + 1 } : item
                 ));
             } else {
-                if(maxStock <= 0){
+                if (maxStock <= 0) {
                     showNotification(`Stok ${product.nama} di cabang ${activeBranch.nama} habis`, 'error');
                     return;
                 }
-                setCart([...cart, { 
+                setCart([...cart, {
                     id: product.id,
                     kode_produk: product.kode_produk,
                     nama: product.nama,
@@ -220,12 +220,12 @@ export default function Welcome({ products = [], branches = [] }) {
         const R = 6371; // Radius Bumi dalam KM
         const dLat = (parseFloat(lat2) - parseFloat(lat1)) * (Math.PI / 180);
         const dLon = (parseFloat(lon2) - parseFloat(lon1)) * (Math.PI / 180);
-        const a = 
+        const a =
             Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(parseFloat(lat1) * (Math.PI / 180)) * Math.cos(parseFloat(lat2) * (Math.PI / 180)) * 
+            Math.cos(parseFloat(lat1) * (Math.PI / 180)) * Math.cos(parseFloat(lat2) * (Math.PI / 180)) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c; 
+        return R * c;
     };
 
     // Effect untuk mengambil jarak rute jalan raya (OSRM)
@@ -236,7 +236,7 @@ export default function Welcome({ products = [], branches = [] }) {
                     // OSRM menggunakan format [longitude, latitude]
                     const url = `https://router.project-osrm.org/route/v1/driving/${activeBranch.longitude},${activeBranch.latitude};${formData.longitude},${formData.latitude}?overview=false`;
                     const response = await axios.get(url);
-                    
+
                     if (response.data.routes && response.data.routes[0]) {
                         const routeDistance = response.data.routes[0].distance / 1000; // Konversi Meter ke KM
                         setDistance(routeDistance);
@@ -260,7 +260,7 @@ export default function Welcome({ products = [], branches = [] }) {
     // Hitung secara langsung (variabel reaktif akan selalu ter-update jika cart berubah)
     const subTotal = cart.reduce((total, item) => total + (item.harga * item.qty), 0);
     const adminFee = subTotal * 0.01; // Web Fee 1%
-    
+
     // Hitung Ongkir berdasarkan state distance
     let deliveryFee = 0;
     if (formData.delivery_method === 'delivery') {
@@ -271,7 +271,7 @@ export default function Welcome({ products = [], branches = [] }) {
                 deliveryFee = 8000 + (Math.ceil(distance - 5) * 2000);
             }
         } else {
-            deliveryFee = 0; 
+            deliveryFee = 0;
         }
     }
 
@@ -349,7 +349,7 @@ export default function Welcome({ products = [], branches = [] }) {
             </Head>
 
             {/* TopNavBar */}
-            <Navbar 
+            <Navbar
                 branches={branches}
                 activeBranch={activeBranch}
                 setActiveBranch={setActiveBranch}
@@ -359,19 +359,17 @@ export default function Welcome({ products = [], branches = [] }) {
             {/* Modern Toast Notification */}
             {showInfoModal && (
                 <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-10 fade-in duration-300">
-                    <div className={`flex items-center gap-4 px-6 py-4 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.1)] border ${
-                        message.type === 'success' 
-                            ? 'bg-[#f0fdf4]/95 dark:bg-green-900/90 border-green-200 text-green-800' 
+                    <div className={`flex items-center gap-4 px-6 py-4 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.1)] border ${message.type === 'success'
+                            ? 'bg-[#f0fdf4]/95 dark:bg-green-900/90 border-green-200 text-green-800'
                             : message.type === 'error'
-                            ? 'bg-[#fef2f2]/95 dark:bg-red-900/90 border-red-200 text-red-800'
-                            : 'bg-white/95 dark:bg-surface-container-highest/90 border-primary/20 text-on-surface'
+                                ? 'bg-[#fef2f2]/95 dark:bg-red-900/90 border-red-200 text-red-800'
+                                : 'bg-white/95 dark:bg-surface-container-highest/90 border-primary/20 text-on-surface'
                         } backdrop-blur-xl min-w-[320px] max-w-md`}>
-                        
-                        <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${
-                            message.type === 'success' ? 'bg-green-100 text-green-600' : 
-                            message.type === 'error' ? 'bg-red-100 text-red-600' : 
-                            'bg-primary/10 text-primary'
-                        }`}>
+
+                        <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${message.type === 'success' ? 'bg-green-100 text-green-600' :
+                                message.type === 'error' ? 'bg-red-100 text-red-600' :
+                                    'bg-primary/10 text-primary'
+                            }`}>
                             <span className="material-symbols-outlined font-black text-2xl">
                                 {message.type === 'success' ? 'check_circle' : message.type === 'error' ? 'error' : 'info'}
                             </span>
@@ -384,8 +382,8 @@ export default function Welcome({ products = [], branches = [] }) {
                             <p className="text-xs font-medium opacity-90 mt-0.5 leading-relaxed">{message.text}</p>
                         </div>
 
-                        <button 
-                            onClick={() => clearMessage()} 
+                        <button
+                            onClick={() => clearMessage()}
                             className="flex-shrink-0 p-2 hover:bg-black/5 rounded-full transition-colors"
                         >
                             <span className="material-symbols-outlined text-xl">close</span>
@@ -470,7 +468,6 @@ export default function Welcome({ products = [], branches = [] }) {
                         <button onClick={() => setActiveTab('Semua')} className={`px-6 py-2 rounded-full ${activeTab === 'Semua' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-secondary-container'} transition-colors font-medium`}>Semua Varian</button>
                         <button onClick={() => setActiveTab('donuts')} className={`px-6 py-2 rounded-full ${activeTab === 'donuts' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-secondary-container'} transition-colors font-medium`}>Donuts</button>
                         <button onClick={() => setActiveTab('mochi')} className={`px-6 py-2 rounded-full ${activeTab === 'mochi' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-primary-container'} transition-colors font-medium`}>Mochi</button>
-                        <button onClick={() => setActiveTab('susu')} className={`px-6 py-2 rounded-full ${activeTab === 'susu' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-primary-container'} transition-colors font-medium`}>Susu</button>
                         <button onClick={() => setActiveTab('minuman')} className={`px-6 py-2 rounded-full ${activeTab === 'minuman' ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant hover:bg-tertiary-container'} transition-colors font-medium`}>Minuman</button>
                     </div>
                     {/* Bento Grid Menu */}
@@ -621,7 +618,7 @@ export default function Welcome({ products = [], branches = [] }) {
                                 <div>
                                     <label className="block text-sm font-bold text-on-surface-variant mb-3">Metode Pengiriman</label>
                                     <div className="grid grid-cols-2 gap-3 mb-6">
-                                        <div 
+                                        <div
                                             onClick={() => setFormData({ ...formData, delivery_method: 'pickup', alamat: 'Ambil di Toko' })}
                                             className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-start gap-1 ${formData.delivery_method === 'pickup' ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-on-surface-variant/20 hover:border-primary/50'}`}
                                         >
@@ -629,7 +626,7 @@ export default function Welcome({ products = [], branches = [] }) {
                                             <span className="text-base font-black text-primary">Ambil Sendiri</span>
                                             <span className="text-[11px] font-medium text-on-surface-variant">Gratis Biaya</span>
                                         </div>
-                                        <div 
+                                        <div
                                             onClick={() => setFormData({ ...formData, delivery_method: 'delivery', alamat: '' })}
                                             className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-start gap-1 ${formData.delivery_method === 'delivery' ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-on-surface-variant/20 hover:border-primary/50'}`}
                                         >
@@ -652,28 +649,28 @@ export default function Welcome({ products = [], branches = [] }) {
                                 </div>
                                 <div>
                                     <label htmlFor="nohp" className="block text-sm font-bold text-on-surface-variant mb-2">No. HP</label>
-                                    <input 
-                                    required 
-                                    name="nohp" 
-                                    type="number" 
-                                    id="nohp" 
-                                    onChange={(e) => setFormData({ ...formData, nohp: e.target.value })}
+                                    <input
+                                        required
+                                        name="nohp"
+                                        type="number"
+                                        id="nohp"
+                                        onChange={(e) => setFormData({ ...formData, nohp: e.target.value })}
 
-                                    className="w-full px-4 py-3 rounded-xl border-2 border-on-surface-variant/10 focus:border-primary focus:outline-none" 
-                                    placeholder="Masukkan No. HP Anda" />
+                                        className="w-full px-4 py-3 rounded-xl border-2 border-on-surface-variant/10 focus:border-primary focus:outline-none"
+                                        placeholder="Masukkan No. HP Anda" />
                                 </div>
-                                 {formData.delivery_method === 'delivery' && (
+                                {formData.delivery_method === 'delivery' && (
                                     <div className="space-y-4">
                                         <div>
                                             <label htmlFor="alamat" className="block text-sm font-bold text-on-surface-variant mb-2">Alamat Lengkap Pengiriman</label>
-                                            <textarea 
-                                            required 
-                                            name="alamat" 
-                                            id="alamat" 
-                                            value={formData.alamat}
-                                            onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-xl border-2 border-on-surface-variant/10 focus:border-primary focus:outline-none min-h-[80px]" 
-                                            placeholder="Tuliskan alamat lengkap Anda (Jalan, RT/RW, Patokan)" />
+                                            <textarea
+                                                required
+                                                name="alamat"
+                                                id="alamat"
+                                                value={formData.alamat}
+                                                onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
+                                                className="w-full px-4 py-3 rounded-xl border-2 border-on-surface-variant/10 focus:border-primary focus:outline-none min-h-[80px]"
+                                                placeholder="Tuliskan alamat lengkap Anda (Jalan, RT/RW, Patokan)" />
                                         </div>
 
                                         {/* Titik Lokasi Peta */}
@@ -683,7 +680,7 @@ export default function Welcome({ products = [], branches = [] }) {
                                                     <label className="block text-sm font-bold text-on-surface-variant">Titik Lokasi Pengiriman</label>
                                                     <p className="text-[10px] text-on-surface-variant">Tandai lokasi akurat rumah Anda pada peta.</p>
                                                 </div>
-                                                <button 
+                                                <button
                                                     type="button"
                                                     onClick={handleLocateMe}
                                                     className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-[10px] font-bold hover:bg-primary/20 transition-all border border-primary/20"
@@ -694,10 +691,10 @@ export default function Welcome({ products = [], branches = [] }) {
                                             </div>
                                             <div className="h-48 w-full rounded-2xl overflow-hidden border-2 border-on-surface-variant/10 z-0 relative bg-surface-container flex items-center justify-center">
                                                 <Suspense fallback={<div className="text-xs animate-pulse">Memuat Peta...</div>}>
-                                                    <MapPicker 
-                                                        latitude={formData.latitude || activeBranch?.latitude} 
+                                                    <MapPicker
+                                                        latitude={formData.latitude || activeBranch?.latitude}
                                                         longitude={formData.longitude || activeBranch?.longitude}
-                                                        onChange={(lat, lng) => setFormData(prev => ({...prev, latitude: lat, longitude: lng}))}
+                                                        onChange={(lat, lng) => setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }))}
                                                         branchPosition={[activeBranch?.latitude, activeBranch?.longitude]}
                                                         mapKey="buyer-map"
                                                     />
@@ -718,19 +715,16 @@ export default function Welcome({ products = [], branches = [] }) {
                                         {[
                                             { id: 'qris', name: 'QRIS / GoPay', type: 'Instant Payment', color: 'text-green-600' },
                                             { id: 'bca_va', name: 'BCA', type: 'Virtual Account', color: 'text-[#0066AE]' },
-                                            { id: 'mandiri_va', name: 'Mandiri', type: 'Virtual Account', color: 'text-[#003D79]' },
-                                            { id: 'bni_va', name: 'BNI', type: 'Virtual Account', color: 'text-[#005E6A]' },
-                                            { id: 'bri_va', name: 'BRI', type: 'Virtual Account', color: 'text-[#00529C]' },
-                                            { id: 'other_va', name: 'Bank Lainnya', type: 'Virtual Account', color: 'text-gray-600' }
+                                            { id: 'bri_va', name: 'BRI', type: 'Virtual Account', color: 'text-[#00529C]' }
                                         ].map((method) => (
-                                            <div 
+                                            <div
                                                 key={method.id}
                                                 onClick={() => setFormData({ ...formData, payment_method: method.id })}
                                                 className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-start justify-center gap-1 group overflow-hidden ${formData.payment_method === method.id ? 'border-primary bg-primary/5 shadow-md shadow-primary/10' : 'border-on-surface-variant/20 hover:border-primary/50 bg-surface'}`}
                                             >
                                                 <span className={`text-base font-black ${method.color}`}>{method.name}</span>
                                                 <span className="text-[11px] font-medium text-on-surface-variant">{method.type}</span>
-                                                
+
                                                 {/* Indikator Aktif (Ceklis) */}
                                                 <div className={`absolute top-3 right-3 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${formData.payment_method === method.id ? 'border-primary bg-primary' : 'border-on-surface-variant/30'}`}>
                                                     {formData.payment_method === method.id && (
@@ -898,7 +892,7 @@ export default function Welcome({ products = [], branches = [] }) {
                         </button>
                         <a className="text-[#76543d]/60 dark:text-[#dcd4c0]/60 hover:text-[#76543d] dark:hover:text-[#fef6e7] transition-colors" href="https://www.tiktok.com/@dollin.donuts?_r=1&_t=ZS-95jzkCV7I2O" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
                             <svg className="w-[18px] h-[18px]" fill="currentColor" viewBox="0 0 448 512" aria-hidden="true">
-                                <path d="M448 209.91a210.06 210.06 0 01-122.77-39.25v178.72A162.55 162.55 0 11185 188.31v89.89a74.62 74.62 0 1052.23 71.18V0h88a121.18 121.18 0 001.86 22.17A122.18 122.18 0 00381 102.39a121.43 121.43 0 0067 20.14z"/>
+                                <path d="M448 209.91a210.06 210.06 0 01-122.77-39.25v178.72A162.55 162.55 0 11185 188.31v89.89a74.62 74.62 0 1052.23 71.18V0h88a121.18 121.18 0 001.86 22.17A122.18 122.18 0 00381 102.39a121.43 121.43 0 0067 20.14z" />
                             </svg>
                         </a>
                     </div>
