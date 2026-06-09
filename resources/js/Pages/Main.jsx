@@ -5,6 +5,7 @@ import axios from 'axios';
 import Navbar from '@/Components/Navbar';
 
 export default function Welcome({ products = [], branches = [] }) {
+    console.log(branches)
     useEffect(() => {
         const savedBranch = localStorage.getItem('selectedBranch');
         if (savedBranch) {
@@ -345,6 +346,13 @@ export default function Welcome({ products = [], branches = [] }) {
                     .material-symbols-outlined.fill-1 { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
                     body { font-family: 'Be Vietnam Pro', sans-serif; }
                     h1, h2, h3, .brand-font { font-family: 'Plus Jakarta Sans', sans-serif; }
+                    @keyframes float {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-15px); }
+                    }
+                    .animate-float {
+                        animation: float 6s ease-in-out infinite;
+                    }
                 `}</style>
             </Head>
 
@@ -360,15 +368,15 @@ export default function Welcome({ products = [], branches = [] }) {
             {showInfoModal && (
                 <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-top-10 fade-in duration-300">
                     <div className={`flex items-center gap-4 px-6 py-4 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.1)] border ${message.type === 'success'
-                            ? 'bg-[#f0fdf4]/95 dark:bg-green-900/90 border-green-200 text-green-800'
-                            : message.type === 'error'
-                                ? 'bg-[#fef2f2]/95 dark:bg-red-900/90 border-red-200 text-red-800'
-                                : 'bg-white/95 dark:bg-surface-container-highest/90 border-primary/20 text-on-surface'
+                        ? 'bg-[#f0fdf4]/95 dark:bg-green-900/90 border-green-200 text-green-800'
+                        : message.type === 'error'
+                            ? 'bg-[#fef2f2]/95 dark:bg-red-900/90 border-red-200 text-red-800'
+                            : 'bg-white/95 dark:bg-surface-container-highest/90 border-primary/20 text-on-surface'
                         } backdrop-blur-xl min-w-[320px] max-w-md`}>
 
                         <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${message.type === 'success' ? 'bg-green-100 text-green-600' :
-                                message.type === 'error' ? 'bg-red-100 text-red-600' :
-                                    'bg-primary/10 text-primary'
+                            message.type === 'error' ? 'bg-red-100 text-red-600' :
+                                'bg-primary/10 text-primary'
                             }`}>
                             <span className="material-symbols-outlined font-black text-2xl">
                                 {message.type === 'success' ? 'check_circle' : message.type === 'error' ? 'error' : 'info'}
@@ -394,31 +402,117 @@ export default function Welcome({ products = [], branches = [] }) {
             {/* Modal Pilih Cabang (Muncul Otomatis) dihandle oleh Navbar */}
 
             {/* Hero Section */}
-            <section className="relative pt-32 pb-20 px-8 overflow-hidden">
-                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                    <div className="z-10">
-                        <span className="inline-block px-4 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-sm font-semibold mb-6">Feeling Fluffy</span>
-                        <h1 className="text-6xl md:text-7xl font-extrabold text-primary leading-[1.1] mb-6 tracking-tight">
-                            <span className="text-secondary">Dollin Donuts</span>
+            <section className="relative pt-36 pb-24 px-8 overflow-hidden bg-[#FAF5ED]">
+
+
+
+                <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                    <svg className="absolute rotate-45 top-0 left-[-150px] w-[350px] md:w-[580px] h-auto text-[#A77B5B]/25 pointer-events-none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                        <path fill="#DCC3AA" d="M30.8,-48.9C39.9,-48.2,47,-39.7,57.8,-30.3C68.5,-20.8,83,-10.4,87,2.3C91.1,15.1,84.8,30.2,71.4,35.1C58,39.9,37.4,34.5,24.3,40.1C11.2,45.8,5.6,62.4,-5.4,71.7C-16.4,81.1,-32.9,83.3,-38.1,73.2C-43.3,63,-37.3,40.5,-36.2,26.3C-35,12.1,-38.7,6,-43.3,-2.7C-47.9,-11.3,-53.4,-22.7,-51.3,-31.3C-49.3,-40,-39.7,-46.1,-29.9,-46.3C-20.1,-46.5,-10,-41,0.4,-41.7C10.9,-42.5,21.8,-49.6,30.8,-48.9Z" transform="translate(100 100)" />
+                    </svg>
+                    {/* KIRI: Gambar Donat Melayang + Judul Cabang + Tombol Aksi */}
+                    <div className="lg:col-span-6 z-10 flex flex-col items-center lg:items-start text-center lg:text-left">
+                        {/* Donat Melayang */}
+                        <div className="relative mb-6 w-full max-w-[320px] sm:max-w-[380px] lg:max-w-[420px] flex justify-end transition-transform duration-500 hover:scale-105">
+                            <img
+                                alt="Artisanal Donuts"
+                                className="w-auto h-[300px] drop-shadow-[0_25px_35px_rgba(140,94,60,0.18)] animate-float"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrQXTNQRjy9iAj6jbUyFeki3pTXgakRUi48LI64uLb4uNLHeH0gYY2xErg3Ok0fNxfrDsPfWdhcAKlNKDGJw0Z5k3hxwhLR-q9vxtuhXiDDdjYxVeGoUw3XA6wAUmptzAItE49w2j7m6ejqVNL9wNcypZmpJsdMYhe3THB_NcyJPEZT4dZIIeQMUrgCBQwc0oIqpk-TvUdcJUGJfZisvzE17pnpySODmhe7C2AM7UzbT3kLl8-_jNWE9-VNs0d6qPN3Ea4m7Wewf6L"
+                            />
+                        </div>
+
+                        {/* Nama Cabang */}
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-primary leading-[1.15] mb-3 tracking-tight font-headline">
+                            {activeBranch?.nama || 'Dollin Donuts'}
                         </h1>
-                        <p className="text-lg text-on-surface-variant max-w-md mb-10 leading-relaxed">
+
+                        {/* Slogan */}
+                        <p className="text-[#8C5E3C] font-black text-xs tracking-[0.2em] uppercase mb-8 opacity-90">
                             BECAUSE FLUFFY IS A FEELING
                         </p>
-                        <div className="flex flex-wrap gap-4">
-                            <a className="px-8 py-4 bg-primary text-on-primary rounded-xl font-bold text-lg hover:opacity-90 transition-all flex items-center gap-2" href="#menu">
+
+                        {/* Tombol Aksi */}
+                        <div className="flex flex-wrap justify-center lg:justify-start gap-4">
+                            <a
+                                className="px-6 py-3.5 bg-[#8C5E3C] hover:bg-[#734A2C] text-[#FAF5ED] rounded-full font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-[#8C5E3C]/20 hover:-translate-y-0.5 active:scale-95"
+                                href="#menu"
+                            >
+                                <span className="material-symbols-outlined text-lg">arrow_downward</span>
                                 Browse the Menu
-                                <span className="material-symbols-outlined">arrow_downward</span>
                             </a>
-                            <button className="px-8 py-4 bg-surface-container-high text-primary rounded-xl font-bold text-lg flex items-center gap-2 hover:bg-surface-container-highest transition-colors">
-                                <span className="material-symbols-outlined">chat</span>
+                            <button
+                                onClick={() => setShowWaModal(true)}
+                                className="px-6 py-3.5 bg-[#ECC6C6] hover:bg-[#E2B2B2] text-[#7A3E3E] rounded-full font-bold text-sm flex items-center gap-2 transition-all hover:-translate-y-0.5 active:scale-95 shadow-md shadow-[#ECC6C6]/10"
+                            >
+                                <span className="material-symbols-outlined text-lg">chat</span>
                                 Chat with a Baker
                             </button>
                         </div>
                     </div>
-                    <div className="relative">
-                        <div className="absolute -top-20 -right-20 w-96 h-96 bg-secondary-container/30 blur-[100px] rounded-full"></div>
-                        <div className="relative rounded-xl overflow-visible">
-                            <img alt="Artisanal Donuts" className="w-full h-auto rounded-lg shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrQXTNQRjy9iAj6jbUyFeki3pTXgakRUi48LI64uLb4uNLHeH0gYY2xErg3Ok0fNxfrDsPfWdhcAKlNKDGJw0Z5k3hxwhLR-q9vxtuhXiDDdjYxVeGoUw3XA6wAUmptzAItE49w2j7m6ejqVNL9wNcypZmpJsdMYhe3THB_NcyJPEZT4dZIIeQMUrgCBQwc0oIqpk-TvUdcJUGJfZisvzE17pnpySODmhe7C2AM7UzbT3kLl8-_jNWE9-VNs0d6qPN3Ea4m7Wewf6L" />
+
+                    {/* KANAN: Outlet Map (Bingkai Jendela Coklat) + Social Capsule */}
+                    <div className="lg:col-span-6 z-10 flex flex-col items-center lg:items-end w-full relative">
+                        {/* Bingkai Peta Outlet */}
+                        <div className="w-full max-w-[500px] bg-[#FAF5ED] rounded-[2.5rem] border-[10px] border-[#A77B5B] shadow-2xl overflow-hidden flex flex-col transform lg:rotate-2 hover:rotate-0 transition-all duration-500">
+                            {/* Window Header */}
+                            <div className="bg-[#A77B5B] px-6 py-3 flex items-center justify-center border-b border-[#FAF5ED]/10">
+                                <span className="text-[#FAF5ED] text-xs font-black tracking-wider uppercase font-headline">
+                                    Outlet: {activeBranch?.nama || 'Dollin Donuts'}
+                                </span>
+                            </div>
+                            {/* Map Body */}
+                            <div className="h-[280px] sm:h-[320px] w-full relative z-0 bg-surface-container">
+                                {activeBranch?.latitude && activeBranch?.longitude ? (
+                                    <Suspense fallback={<div className="h-full w-full flex items-center justify-center text-xs animate-pulse">Memuat Peta Outlet...</div>}>
+                                        <MapPicker
+                                            latitude={activeBranch.latitude}
+                                            longitude={activeBranch.longitude}
+                                            onChange={() => { }}
+                                            branchPosition={[activeBranch.latitude, activeBranch.longitude]}
+                                            mapKey={`hero-map-${activeBranch.id}`}
+                                        />
+                                    </Suspense>
+                                ) : (
+                                    <div className="h-full w-full flex flex-col items-center justify-center text-on-surface-variant/60 p-6 text-center gap-2">
+                                        <span className="material-symbols-outlined text-4xl">map</span>
+                                        <span className="text-xs font-bold">Pilih cabang di menu atas untuk melihat lokasi outlet</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Social Capsule Overlay (Frosted Glass Capsule) */}
+                        <div className="mt-8 lg:absolute lg:bottom-[-20px] lg:left-[40px] bg-white/65 dark:bg-surface-container-low/65 backdrop-blur-xl px-5 py-3 rounded-full border border-white/40 shadow-xl flex items-center gap-3.5 z-20">
+                            <a
+                                href="https://instagram.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-9 h-9 rounded-full bg-[#8C5E3C] hover:bg-[#734A2C] text-[#FAF5ED] flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-sm"
+                            >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051C.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" />
+                                </svg>
+                            </a>
+                            <a
+                                href={`https://wa.me/${activeBranch?.nohp?.replace('+', '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-9 h-9 rounded-full bg-[#8C5E3C] hover:bg-[#734A2C] text-[#FAF5ED] flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-sm"
+                            >
+                                <svg className="w-[18px] h-[18px] translate-y-[0.5px]" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12.012 2C6.48 2 2 6.48 2 12.012c0 1.872.516 3.612 1.416 5.148L2 22l5.004-1.356c1.488.804 3.168 1.272 4.992 1.272C17.52 21.916 22 17.436 22 11.904 22 6.372 17.52 2 12.012 2zm3.324 13.068c-.18.528-.9.984-1.356 1.044-.384.048-.864.096-2.508-.576-2.112-.864-3.468-3.012-3.576-3.156-.108-.144-.864-1.14-.864-2.172 0-1.032.528-1.536.72-1.74.192-.204.42-.252.552-.252.132 0 .264 0 .384.012.12.012.276-.048.432.324.168.384.564 1.344.612 1.44.048.096.084.216.012.336-.072.132-.144.216-.276.372-.132.156-.288.36-.408.492-.132.144-.276.3-.12.588.156.288.696 1.14 1.488 1.848.78.696 1.44.912 1.68 1.02.24.108.384.096.528-.06.144-.156.612-.708.78-.96.168-.252.336-.204.552-.132.228.084 1.428.672 1.668.792.24.12.396.18.456.288.06.108.06.636-.12 1.164z" />
+                                </svg>
+                            </a>
+                            <a
+                                href="https://tiktok.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-9 h-9 rounded-full bg-[#8C5E3C] hover:bg-[#734A2C] text-[#FAF5ED] flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-sm"
+                            >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12.525.02c1.31-.03 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.17-2.86-.74-3.99-1.72-.88-.77-1.52-1.81-1.89-2.91-.09-.02-.17-.03-.26-.05v10.87c.01 2.3-.92 4.67-2.73 6.06-2.12 1.65-5.16 2.01-7.62 1.01-2.94-1.18-4.88-4.47-4.58-7.67.24-2.87 2.22-5.46 4.98-6.31 1.62-.51 3.42-.43 4.98.27v4.21c-1.35-.61-3-.62-4.27.16-1.34.82-2.12 2.44-1.92 4.02.16 1.44 1.27 2.76 2.7 3.06 1.48.33 3.15-.22 4.01-1.5.46-.68.64-1.52.61-2.34V.02z" />
+                                </svg>
+                            </a>
                         </div>
                     </div>
                 </div>

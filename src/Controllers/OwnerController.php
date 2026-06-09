@@ -123,6 +123,7 @@ class OwnerController
         $alamat = $_POST['alamat'] ?? '';
         $admin_email = $_POST['admin_email'] ?? '';
         $admin_password = $_POST['admin_password'] ?? '';
+        $nohp = $_POST['nohp'] ?? '';
         $latitude = $_POST['latitude'] ?? null;
         $longitude = $_POST['longitude'] ?? null;
 
@@ -138,8 +139,8 @@ class OwnerController
 
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare("INSERT INTO branches (nama, alamat, is_active, latitude, longitude, created_at, updated_at) VALUES (?, ?, 1, ?, ?, NOW(), NOW())");
-            $stmt->execute([$nama, $alamat, $latitude, $longitude]);
+            $stmt = $db->prepare("INSERT INTO branches (nama, alamat, nohp, is_active, latitude, longitude, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?, NOW(), NOW())");
+            $stmt->execute([$nama, $alamat, $nohp, $latitude, $longitude]);
             $branchId = $db->lastInsertId();
 
             $hashedPassword = password_hash($admin_password, PASSWORD_DEFAULT);
@@ -167,6 +168,7 @@ class OwnerController
         $alamat = $_POST['alamat'] ?? '';
         $admin_email = $_POST['admin_email'] ?? '';
         $admin_password = $_POST['admin_password'] ?? '';
+        $nohp = $_POST['nohp'] ?? '';
         $is_active = isset($_POST['is_active']) ? (int)$_POST['is_active'] : 1;
         $latitude = $_POST['latitude'] ?? null;
         $longitude = $_POST['longitude'] ?? null;
@@ -189,8 +191,8 @@ class OwnerController
 
         $db->beginTransaction();
         try {
-            $stmt = $db->prepare("UPDATE branches SET nama = ?, alamat = ?, is_active = ?, latitude = ?, longitude = ?, updated_at = NOW() WHERE id = ?");
-            $stmt->execute([$nama, $alamat, $is_active, $latitude, $longitude, $id]);
+            $stmt = $db->prepare("UPDATE branches SET nama = ?, alamat = ?, nohp = ?, is_active = ?, latitude = ?, longitude = ?, updated_at = NOW() WHERE id = ?");
+            $stmt->execute([$nama, $alamat, $nohp, $is_active, $latitude, $longitude, $id]);
 
             if ($oldAdmin) {
                 $sqlUser = "UPDATE users SET name = ?, email = ?";
