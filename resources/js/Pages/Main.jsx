@@ -411,18 +411,17 @@ export default function Welcome({ products = [], branches = [] }) {
                         <path fill="#DCC3AA" d="M30.8,-48.9C39.9,-48.2,47,-39.7,57.8,-30.3C68.5,-20.8,83,-10.4,87,2.3C91.1,15.1,84.8,30.2,71.4,35.1C58,39.9,37.4,34.5,24.3,40.1C11.2,45.8,5.6,62.4,-5.4,71.7C-16.4,81.1,-32.9,83.3,-38.1,73.2C-43.3,63,-37.3,40.5,-36.2,26.3C-35,12.1,-38.7,6,-43.3,-2.7C-47.9,-11.3,-53.4,-22.7,-51.3,-31.3C-49.3,-40,-39.7,-46.1,-29.9,-46.3C-20.1,-46.5,-10,-41,0.4,-41.7C10.9,-42.5,21.8,-49.6,30.8,-48.9Z" transform="translate(100 100)" />
                     </svg>
                     {/* KIRI: Gambar Donat Melayang + Judul Cabang + Tombol Aksi */}
-                    <div className="lg:col-span-6 z-10 flex flex-col items-center lg:items-start text-center lg:text-left">
-                        {/* Donat Melayang */}
-                        <div className="relative mb-6 w-full max-w-[320px] sm:max-w-[380px] lg:max-w-[420px] flex justify-end transition-transform duration-500 hover:scale-105">
+                    <div className="lg:col-span-6 z-10 flex flex-col items-center lg:items-start text-center lg:text-left relative pt-[220px] sm:pt-[300px] lg:pt-[360px]">
+                        {/* Donat Melayang (Absolute & Di Belakang Teks) */}
+                        <div className="absolute top-[-100px] left-0 w-full flex justify-center lg:justify-start pointer-events-none z-0">
                             <img
                                 alt="Artisanal Donuts"
-                                className="w-auto h-[300px] drop-shadow-[0_25px_35px_rgba(140,94,60,0.18)] animate-float"
-                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrQXTNQRjy9iAj6jbUyFeki3pTXgakRUi48LI64uLb4uNLHeH0gYY2xErg3Ok0fNxfrDsPfWdhcAKlNKDGJw0Z5k3hxwhLR-q9vxtuhXiDDdjYxVeGoUw3XA6wAUmptzAItE49w2j7m6ejqVNL9wNcypZmpJsdMYhe3THB_NcyJPEZT4dZIIeQMUrgCBQwc0oIqpk-TvUdcJUGJfZisvzE17pnpySODmhe7C2AM7UzbT3kLl8-_jNWE9-VNs0d6qPN3Ea4m7Wewf6L"
+                                className="w-auto h-[400px] sm:h-[400px] lg:h-[550px] object-contain drop-shadow-[0_25px_45px_rgba(140,94,60,0.25)] animate-float"
+                                src="./images/hero.png"
                             />
                         </div>
-
                         {/* Nama Cabang */}
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-primary leading-[1.15] mb-3 tracking-tight font-headline">
+                        <h1 className="text-3xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-extrabold text-primary leading-[1.15] mb-3 tracking-tight font-headline z-10 transition-all duration-300">
                             {activeBranch?.nama || 'Dollin Donuts'}
                         </h1>
 
